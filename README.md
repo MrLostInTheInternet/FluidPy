@@ -8,6 +8,7 @@ A script that helps Students like me to use and create their own FluidSim circui
  /  /      / /__  / /__/ / / /  / /___/  /  /  /          / /     
 /__/      /____/ /______/ /_/  /_______/   /__/          /_/   [] 
 
+                
                 Developed by MrLostInTheInternet
                 
 Welcome to FluidPy, an automation tool to analyze the creation of a FluidSim circuit, 
