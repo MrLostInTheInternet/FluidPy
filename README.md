@@ -1,7 +1,5 @@
 # FluidPy
-A script that helps Students like me to use and create their own FluidSim pcircuit
-
-
+A script that helps Students like me to use and create their own FluidSim circuit
       ________                 _               _______         __ 
      /   ____/ __     __   __ |_|   _____     /  __   \ __    / / 
     /  /___   / /    / /  / / __   / ___  \  /  / /   | \ \  / /  
