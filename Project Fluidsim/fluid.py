@@ -14,6 +14,13 @@ def assign_blocks(stroke, sequence):
     with sequence as s:
         get_index = s.index(stroke)
 
+def check_loop(sequence):
+
+def limit_switches(sequence):
+
+def pistons_plots(sequence, l_s):
+
+
 #check piston position, if the piston is already in the position of the new stroke, then ask again for the correct stroke   
 def check_piston_position(stroke, s, correct_stroke):
     correct_stroke = True
@@ -71,19 +78,6 @@ def insert_stroke(sequence):
             continue_insert = True
 
     sequence.append(stroke)
-    '''with open("sequence.txt","w") as f:
-        try:
-            if '/' not in stroke[0]:
-                print(stroke)
-                f.write(stroke)
-                f.flush()
-                f.close()
-            else:
-                print("We can proceed with the analysis. ")
-                f.flush()
-                f.close()
-        except IOError as e:
-            print(e)'''
     return stroke, sequence
 
 class FluidPy:
@@ -92,10 +86,16 @@ class FluidPy:
     def run(self):
         if self.args.loop:
             self.loop()
+        elif self.args.file():
+            self.file()
         else:
             self.normal()
     
-    #def sequence(self, sequence, args):
+    def analysis(self, sequence):
+        s_loop = check_loop(sequence)
+        s_blocks = assign_blocks(sequence)
+        l_s = limit_switches(sequence)
+        pistons_plots(sequence, l_s)
 
     def normal(self):
         sequence = []
@@ -107,27 +107,14 @@ class FluidPy:
                 if '/' in stroke:
                     del sequence[-1]
                     stop_sequence = True
-                    check_for_loop(sequence)
+                    self.analysis(sequence)
                 else:
                     stop_sequence = False
-            
+    
+
 
         except KeyboardInterrupt:
             print("\nUser has terminated the sequence.\n")
-        
-'''        sequence = []
-        try:
-            while True:
-                stroke, sequence = insert_stroke(sequence)
-                if '/' in stroke:
-                    del sequence[-1]
-                    break
-        except KeyboardInterrupt:
-            print("User terminated the sequence.\n")
-            sys.exit()
-        print(sequence)
-        #check_sequence()'''
-    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
