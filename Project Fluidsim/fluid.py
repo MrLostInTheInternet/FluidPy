@@ -1,24 +1,75 @@
 #!/usr/bin/env python3
 
 import argparse
+from tkinter import Y
 
+import matplotlib.pyplot as plt
+import numpy as np
 import sys
 import string
-import textwrap                 
+import textwrap
+from types import new_class             
+
 #ask to insert the correct stroke if the check returns false
 def insert_correct_stroke():
     stroke = input("Error. Insert the correct stroke: ")
     return stroke
 
-def assign_blocks(stroke, sequence):
+#def assign_blocks(sequence):
     with sequence as s:
         get_index = s.index(stroke)
 
-def check_loop(sequence):
+def check_loop(s):
+    for i in range(len(s)):
+        stroke = s[i]
+        rep = s.count(stroke)
+        if rep > 2:
+            print("There is a loop with the piston %s\n" %stroke)
+        else:
+            continue
 
-def limit_switches(sequence):
+def limit(sequence):
+    s = []
+    sequence = [words.replace("-", "") for words in sequence]
+    sequence = [words.replace("+", "") for words in sequence]
+    limit = len(set(sequence))
+    for stroke in sequence:
+        if stroke not in s:
+            s.append(stroke)
+    return limit, s
 
-def pistons_plots(sequence, l_s):
+def diagrams(sequence, limit_switches):
+    s = []
+    l, s = limit(sequence)
+    fig, axs = plt.subplots(nrows = l, ncols = 1)
+    
+    x = [0, len(sequence)]
+    y = x
+    for i, ax in enumerate(axs.flat):
+        ax.set_title(f'Piston ' + str(s[i]))
+        ax.set_ylim([0, 1])
+        for stroke in range(len(sequence)):
+            if sequence[stroke][1] == '+':
+                z = x
+            else:
+                z = (-x)
+        ax.plot(x, z, 'b')
+    plt.tight_layout()
+    plt.show()
+    
+#s_l_s = sequence_limit_switches
+def limit_switches(s_l_s):
+    new_s = []
+    s_l_s = [words.replace("+", "1")
+                          for words in s_l_s]
+    s_l_s = [words.replace("-", "0")
+                          for words in s_l_s]
+    for i, each in enumerate(s_l_s):
+        new_s.append(s_l_s[i - 1])
+    s_l_s = new_s
+    return s_l_s
+
+#def pistons_plots(sequence, l_s):
 
 
 #check piston position, if the piston is already in the position of the new stroke, then ask again for the correct stroke   
@@ -60,6 +111,8 @@ def check_stroke(stroke, sequence):
 
         else:
             print("A letter must be the name of the actuator")
+            correct_stroke = False
+            break
         
     return correct_stroke
 
@@ -86,16 +139,18 @@ class FluidPy:
     def run(self):
         if self.args.loop:
             self.loop()
-        elif self.args.file():
-            self.file()
+        #elif self.args.file():
+        #    self.file()
         else:
             self.normal()
     
     def analysis(self, sequence):
         s_loop = check_loop(sequence)
-        s_blocks = assign_blocks(sequence)
-        l_s = limit_switches(sequence)
-        pistons_plots(sequence, l_s)
+        #s_blocks = assign_blocks(sequence)
+        s_l_s = limit_switches(sequence)
+        s_upper = [stroke.upper() for stroke in sequence]
+        diagrams(s_upper, s_l_s)
+        #pistons_plots(sequence, l_s)
 
     def normal(self):
         sequence = []
