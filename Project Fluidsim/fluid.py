@@ -25,9 +25,10 @@ def check_loop(s):
         rep = s.count(stroke)
         if rep > 2:
             print("There is a loop with the piston %s\n" %stroke)
+            loop = True
         else:
-            continue
-
+            loop = False
+    return loop
 def limit(sequence):
     s = []
     sequence = [words.replace("-", "") for words in sequence]
@@ -43,6 +44,7 @@ def diagrams(sequence, limit_switches):
     s = []
     l, s, index_sequence= limit(sequence)
     fig, axs = plt.subplots(nrows = l, ncols = 1)
+    plt.get_current_fig_manager().set_window_title("Diagram's fases")
     
     x = list(range(len(sequence)+1))
     y = [[] for _ in range(l)]
@@ -107,6 +109,19 @@ def check_piston_position(stroke, s, correct_stroke):
     
     return correct_stroke
 
+def check_sequence(sequence):
+    l = limit(sequence)[0]
+    if len(sequence) != (l*2):
+        loop = check_loop(sequence)
+        if loop == True:
+            print("ok")
+            correct_stroke = True
+        else:
+            print("The sequence isn't completed")
+            correct_stroke = False
+    else:
+        correct_stroke = True
+    return correct_stroke
 #check the input from the user
 
 def check_stroke(stroke, sequence):                                                                  
@@ -125,9 +140,11 @@ def check_stroke(stroke, sequence):
                 correct_stroke = False                                                                  
                 break
         elif '/' in stroke[0]:                                                             
-            correct_stroke = True
-            print("The sequence is terminated.\n")
-
+            correct_stroke = check_sequence(sequence)
+            if correct_stroke == False:
+                break
+            else:
+                print("The sequence is terminated.\n")
         else:
             print("A letter must be the name of the actuator")
             correct_stroke = False
@@ -142,12 +159,14 @@ def insert_stroke(sequence):
     while not continue_insert:
         correct_stroke = check_stroke(stroke, sequence)
         if correct_stroke != True:
-            if '/' not in stroke:
-                stroke = insert_correct_stroke()
-            else:
-                print("We can proceed with the analysis")
+            stroke = insert_correct_stroke()
         else:
-            continue_insert = True
+            if '/' in stroke:
+                print("We can proceed with the analysis")
+                continue_insert = False
+                break
+            else:
+                continue_insert = True
 
     sequence.append(stroke)
     return stroke, sequence
