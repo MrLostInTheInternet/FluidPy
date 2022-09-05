@@ -43,17 +43,19 @@ def diagrams(sequence, limit_switches):
     l, s = limit(sequence)
     fig, axs = plt.subplots(nrows = l, ncols = 1)
     
-    x = [0, len(sequence)]
-    y = x
+    x1 = [0, len(sequence)]
+    x2 = [-x for x in x1]
+
+    y = x1
     for i, ax in enumerate(axs.flat):
         ax.set_title(f'Piston ' + str(s[i]))
         ax.set_ylim([0, 1])
         for stroke in range(len(sequence)):
             if sequence[stroke][1] == '+':
-                z = x
+                z = x1
             else:
-                z = (-x)
-        ax.plot(x, z, 'b')
+                z = x2
+            ax.plot(x1, z, 'b')
     plt.tight_layout()
     plt.show()
     
