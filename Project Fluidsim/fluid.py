@@ -36,26 +36,43 @@ def limit(sequence):
     for stroke in sequence:
         if stroke not in s:
             s.append(stroke)
-    return limit, s
+    index_sequence = sequence
+    return limit, s, index_sequence
 
 def diagrams(sequence, limit_switches):
     s = []
-    l, s = limit(sequence)
+    l, s, index_sequence= limit(sequence)
     fig, axs = plt.subplots(nrows = l, ncols = 1)
     
-    x1 = [0, len(sequence)]
-    x2 = [-x for x in x1]
+    x = list(range(len(sequence)+1))
+    y = [[] for _ in range(l)]
 
-    y = x1
+    for j in range(len(s)):
+
+        stroke = s[j]
+        index = index_sequence.index(stroke)
+        if sequence[index][1] == '+':
+            y[j].append(0)
+            v = 0
+        else:
+            y[j].append(1)
+            v = 1
+        for i in range(len(sequence)):
+            if stroke == sequence[i][0]:
+                if sequence[i][1] == '+':
+                    y[j].append(1)
+                    v = 1
+                else:
+                    y[j].append(0)
+                    v = 0
+            else:
+                y[j].append(v)
+            
     for i, ax in enumerate(axs.flat):
         ax.set_title(f'Piston ' + str(s[i]))
         ax.set_ylim([0, 1])
-        for stroke in range(len(sequence)):
-            if sequence[stroke][1] == '+':
-                z = x1
-            else:
-                z = x2
-            ax.plot(x1, z, 'b')
+        ax.plot(x,y[i])
+
     plt.tight_layout()
     plt.show()
     
