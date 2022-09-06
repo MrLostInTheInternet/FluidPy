@@ -1,25 +1,15 @@
 #!/usr/bin/env python3
 
 import argparse
+import time
 
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import string
-import time
-from termcolor import colored
-import textwrap            
-
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+import textwrap
+from textwrap import fill, wrap  
+from queue import Empty
 
 #ask to insert the correct stroke if the check returns false
 def insert_correct_stroke():
@@ -30,16 +20,25 @@ def insert_correct_stroke():
     with sequence as s:
         get_index = s.index(stroke)
 
+#check if there are pistons in loop 
 def check_loop(s):
+    stroke_signed = []
     for i in range(len(s)):
         stroke = s[i]
         rep = s.count(stroke)
-        if rep > 2:
-            print("There is a loop with the piston %s\n" %stroke)
-            loop = True
+        if stroke not in stroke_signed:    
+            if rep > 2:
+                stroke_signed.append(stroke)
+                loop = True
+                break
+            else:
+                loop = False
         else:
-            loop = False
+            loop = True
+            break
     return loop
+
+#number of pistons in the sequence
 def limit(sequence):
     s = []
     sequence = [words.replace("-", "") for words in sequence]
@@ -51,12 +50,19 @@ def limit(sequence):
     index_sequence = sequence
     return limit, s, index_sequence
 
+#diagram's fases 
 def diagrams(sequence, limit_switches):
     s = []
     l, s, index_sequence= limit(sequence)
+    cell_text = [limit_switches]
+    columns= sequence
+    
+
     fig, axs = plt.subplots(nrows = l, ncols = 1)
     plt.get_current_fig_manager().set_window_title("Diagram's fases")
-    
+    plt.rcParams["figure.figsize"] = [15, 9]
+    plt.rcParams["figure.autolayout"] = True
+
     x = list(range(len(sequence)+1))
     y = [[] for _ in range(l)]
 
@@ -80,12 +86,24 @@ def diagrams(sequence, limit_switches):
                     v = 0
             else:
                 y[j].append(v)
-            
     for i, ax in enumerate(axs.flat):
-        ax.set_title(f'Piston ' + str(s[i]))
-        ax.set_ylim([0, 1.001])
-        ax.plot(x,y[i])
-
+        ax.set_ylabel(str(s[i]), rotation = 0)
+        ax.set_ylim([0, 1])
+        ax.set_yticks(range(0,2,1))
+        ax.set_xlim([0, len(sequence)])
+        ax.sharex(ax)
+        ax.plot(x,y[i], 'o-')
+        
+    diagram = fig.add_subplot()
+    diagram.table(cellText = cell_text,
+                rowLabels = ['Finecorsa'],
+                colLabels = columns,
+                loc = 'bottom',
+                bbox =[0.0, -0.25, 1, 0.1])
+    diagram.axis('off')
+    diagram.axis('off')
+    plt.subplots_adjust(left=0.08, bottom=None, right=None, top=None, wspace=None, hspace=0.972)
+    
     plt.tight_layout()
     plt.show()
     
@@ -101,11 +119,19 @@ def limit_switches(s_l_s):
     s_l_s = new_s
     return s_l_s
 
-#def pistons_plots(sequence, l_s):
-
+#read sequence from file
+def read_file(sequence):
+    with open('sequence.txt') as f:
+        line = f.readlines()
+    s = [x.replace("/","") for x in line]
+    s = ''.join(s)
+    sequence = wrap(s, 2)
+    return sequence
 
 #check piston position, if the piston is already in the position of the new stroke, then ask again for the correct stroke   
 def check_piston_position(stroke, s, correct_stroke):
+    s = [x.upper() for x in s]
+    stroke = stroke.upper()
     correct_stroke = True
     for i in reversed(range(len(s))):
         if s[i][0] == stroke[0]:
@@ -120,12 +146,14 @@ def check_piston_position(stroke, s, correct_stroke):
     
     return correct_stroke
 
+
+#check the sequence, if it is not completed it asks to finish it.
 def check_sequence(sequence):
     l = limit(sequence)[0]
     if len(sequence) != (l*2):
-        loop = check_loop(sequence)
+        s = limit(sequence)[2]
+        loop = check_loop(s)
         if loop == True:
-            print("ok")
             correct_stroke = True
         else:
             print("The sequence isn't completed")
@@ -133,8 +161,8 @@ def check_sequence(sequence):
     else:
         correct_stroke = True
     return correct_stroke
-#check the input from the user
 
+#check the input from the user
 def check_stroke(stroke, sequence):                                                                  
     correct_stroke = False
     while not correct_stroke:                                                                          
@@ -182,43 +210,54 @@ def insert_stroke(sequence):
     sequence.append(stroke)
     return stroke, sequence
 
-def welcome():
-    print('      ________                 _               _______         __ ')
-    print('     /  _____/ __     __   __ |_|   _____     /  __   \ __    / / ')
-    print('    /  /___   / /    / /  / / __   / ___  \  /  / /   | \ \  / /  ')
-    print('   /  ____/  / /    / /  / / / /  / /   \  | /  /_/  |   \ \/ /   ')
-    print('  /  /      / /    / /  / / / /  / /   |  |  /  ____/     \  /    ')
-    print(' /  /      / /__  / /__/ / / /  / /___/  /  /  /          / /     ')
-    print('/__/      /____/ /______/ /_/  /_______/   /__/          /_/   [] ')
-    print('\n')
-    print(bcolors.OKGREEN +
-          '                ~ Developed by MrLostInTheInternet ~              ' + bcolors.ENDC)
-    print(bcolors.HEADER + '[] Welcome to FluidPy, a script that will help you create your Fluidsim circuit !' + bcolors.ENDC)
-    print('')
-    time.sleep(2)
-    print(bcolors.HEADER + '[] This python script will guide you throught all you need, for creating your circuit' + bcolors.ENDC)
-    print('')
-    time.sleep(2)
-    print(bcolors.HEADER +
-          '[] First of all, enter your sequence you\'ll be working with:' + bcolors.ENDC)
-    print('')
-    time.sleep(1)
-    print(bcolors.HEADER + '[] Enter ' + bcolors.WARNING + '"/"' +
-          bcolors.HEADER + ' when you want to finish the sequence ...\n' + bcolors.ENDC)
+class bcolors:    
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
+#class FluidPy to read the input arguments and elaborate all the functions
 class FluidPy:
     def __init__(self, args):
         self.args = args
     def run(self):
-        if self.args.loop:
-            self.loop()
-        #elif self.args.file():
-        #    self.file()
+        if self.args.file:
+            self.file()
         else:
             self.normal()
-    
+            
+    def welcome(self):
+        print('      ________                 _               _______         __ ')
+        print('     /  _____/ __     __   __ |_|   _____     /  __   \ __    / / ')
+        print('    /  /___   / /    / /  / / __   / ___  \  /  / /   | \ \  / /  ')
+        print('   /  ____/  / /    / /  / / / /  / /   \  | /  /_/  |   \ \/ /   ')
+        print('  /  /      / /    / /  / / / /  / /   |  |  /  ____/     \  /    ')
+        print(' /  /      / /__  / /__/ / / /  / /___/  /  /  /          / /     ')
+        print('/__/      /____/ /______/ /_/  /_______/   /__/          /_/   [] ')
+        print('\n')
+        print(bcolors.OKGREEN + '                Developed by MrLostInTheInternet              ' + bcolors.ENDC)
+        print(fill(bcolors.HEADER + '**Welcome to FluidPy, a script that will help you create your Fluidsim circuit !**' + bcolors.ENDC))
+        print('')
+        time.sleep(0.5)
+        print(fill(bcolors.HEADER + 'This python script will guide you throught all you need, for creating your circuit' + bcolors.ENDC))
+        print('')
+        time.sleep(0.5)
+        print(fill(bcolors.HEADER + 'First of all, enter your sequence you\'ll be working with:\n' + bcolors.ENDC))
+        print('')
+        if self.args.file:
+            return
+        else:
+            time.sleep(1)
+            print(fill(bcolors.HEADER + '**Enter ' + bcolors.WARNING + '"/"' + bcolors.HEADER + ' when you want to finish the sequence ...\n' + bcolors.ENDC))
+
     def analysis(self, sequence):
-        s_loop = check_loop(sequence)
+        s = limit(sequence)[2]
+        s_loop = check_loop(s)
         #s_blocks = assign_blocks(sequence)
         s_l_s = limit_switches(sequence)
         s_upper = [stroke.upper() for stroke in sequence]
@@ -226,7 +265,7 @@ class FluidPy:
         #pistons_plots(sequence, l_s)
 
     def normal(self):
-        welcome()
+        self.welcome()
         sequence = []
         stop_sequence = False
         try:
@@ -239,23 +278,28 @@ class FluidPy:
                     self.analysis(sequence)
                 else:
                     stop_sequence = False
-    
-
 
         except KeyboardInterrupt:
             print("\nUser has terminated the sequence.\n")
+    
+    def file(self):
+        self.welcome()
+        sequence = []
+        sequence = read_file(sequence)
+        if sequence is not Empty:
+            self.analysis(sequence)
+        else:
+            print("The sequence is empty.")
+        
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
     description='FluidPy Tool',
     formatter_class=argparse.RawDescriptionHelpFormatter,
     epilog=textwrap.dedent('''Example:
-    fluid.py -f=mysequence.txt #lettura sequenza da file
-    fluid.py -l -f=mysequence.txt #lettura sequenza con loop da file
+    fluid.py -f=mysequence.txt #read the sequence from file.txt
     '''))
     parser.add_argument('-f', '--file', type=argparse.FileType('r'))
-    parser.add_argument('-l','--loop',help='sequence with loop in it')
     args = parser.parse_args()
-    #print(args.file.readlines())
     fp = FluidPy(args)
     fp.run()
