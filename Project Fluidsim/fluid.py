@@ -74,13 +74,13 @@ def diagrams(sequence, limit_switches):
             y[j].append(0)
             v = 0
         else:
-            y[j].append(1)
-            v = 1
+            y[j].append(0.99)
+            v = 0.99
         for i in range(len(sequence)):
             if stroke == sequence[i][0]:
                 if sequence[i][1] == '+':
-                    y[j].append(1)
-                    v = 1
+                    y[j].append(0.99)
+                    v = 0.99
                 else:
                     y[j].append(0)
                     v = 0
@@ -88,7 +88,7 @@ def diagrams(sequence, limit_switches):
                 y[j].append(v)
     for i, ax in enumerate(axs.flat):
         ax.set_ylabel(str(s[i]), rotation = 0)
-        ax.set_ylim([0, 1])
+        ax.set_ylim([0, 1.0])
         ax.set_yticks(range(0,2,1))
         ax.set_xlim([0, len(sequence)])
         ax.sharex(ax)
@@ -96,13 +96,13 @@ def diagrams(sequence, limit_switches):
         
     diagram = fig.add_subplot()
     diagram.table(cellText = cell_text,
-                rowLabels = ['Finecorsa'],
+                rowLabels = ['limit switches'],
                 colLabels = columns,
                 loc = 'bottom',
-                bbox =[0.0, -0.25, 1, 0.1])
+                bbox =[0.0, -0.25, 1, 0.12])
     diagram.axis('off')
     diagram.axis('off')
-    plt.subplots_adjust(left=0.08, bottom=None, right=None, top=None, wspace=None, hspace=0.972)
+    plt.subplots_adjust(left=0.08, bottom=None, right=None, top=None, wspace=None, hspace=0.5)
     
     plt.tight_layout()
     plt.show()
