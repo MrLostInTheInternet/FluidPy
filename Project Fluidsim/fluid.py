@@ -127,7 +127,6 @@ def read_file(sequence):
     s = ''.join(s)
     sequence = wrap(s, 2)
     return sequence
-
 #check piston position, if the piston is already in the position of the new stroke, then ask again for the correct stroke   
 def check_piston_position(stroke, s, correct_stroke):
     s = [x.upper() for x in s]
@@ -209,7 +208,7 @@ def insert_stroke(sequence):
 
     sequence.append(stroke)
     return stroke, sequence
-
+#class bcolors for colored output
 class bcolors:    
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -291,7 +290,6 @@ class FluidPy:
         else:
             print("The sequence is empty.")
         
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
     description='FluidPy Tool',
