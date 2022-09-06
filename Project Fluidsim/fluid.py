@@ -1,14 +1,25 @@
 #!/usr/bin/env python3
 
 import argparse
-from tkinter import Y
 
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import string
-import textwrap
-from types import new_class             
+import time
+from termcolor import colored
+import textwrap            
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 #ask to insert the correct stroke if the check returns false
 def insert_correct_stroke():
@@ -72,7 +83,7 @@ def diagrams(sequence, limit_switches):
             
     for i, ax in enumerate(axs.flat):
         ax.set_title(f'Piston ' + str(s[i]))
-        ax.set_ylim([0, 1])
+        ax.set_ylim([0, 1.001])
         ax.plot(x,y[i])
 
     plt.tight_layout()
@@ -171,6 +182,30 @@ def insert_stroke(sequence):
     sequence.append(stroke)
     return stroke, sequence
 
+def welcome():
+    print('      ________                 _               _______         __ ')
+    print('     /  _____/ __     __   __ |_|   _____     /  __   \ __    / / ')
+    print('    /  /___   / /    / /  / / __   / ___  \  /  / /   | \ \  / /  ')
+    print('   /  ____/  / /    / /  / / / /  / /   \  | /  /_/  |   \ \/ /   ')
+    print('  /  /      / /    / /  / / / /  / /   |  |  /  ____/     \  /    ')
+    print(' /  /      / /__  / /__/ / / /  / /___/  /  /  /          / /     ')
+    print('/__/      /____/ /______/ /_/  /_______/   /__/          /_/   [] ')
+    print('\n')
+    print(bcolors.OKGREEN +
+          '                ~ Developed by MrLostInTheInternet ~              ' + bcolors.ENDC)
+    print(bcolors.HEADER + '[] Welcome to FluidPy, a script that will help you create your Fluidsim circuit !' + bcolors.ENDC)
+    print('')
+    time.sleep(2)
+    print(bcolors.HEADER + '[] This python script will guide you throught all you need, for creating your circuit' + bcolors.ENDC)
+    print('')
+    time.sleep(2)
+    print(bcolors.HEADER +
+          '[] First of all, enter your sequence you\'ll be working with:' + bcolors.ENDC)
+    print('')
+    time.sleep(1)
+    print(bcolors.HEADER + '[] Enter ' + bcolors.WARNING + '"/"' +
+          bcolors.HEADER + ' when you want to finish the sequence ...\n' + bcolors.ENDC)
+
 class FluidPy:
     def __init__(self, args):
         self.args = args
@@ -191,6 +226,7 @@ class FluidPy:
         #pistons_plots(sequence, l_s)
 
     def normal(self):
+        welcome()
         sequence = []
         stop_sequence = False
         try:
