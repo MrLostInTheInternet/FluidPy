@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-from tkinter import Y
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -20,15 +19,22 @@ def insert_correct_stroke():
         get_index = s.index(stroke)
 
 def check_loop(s):
+    stroke_signed = []
     for i in range(len(s)):
         stroke = s[i]
         rep = s.count(stroke)
-        if rep > 2:
-            print("There is a loop with the piston %s\n" %stroke)
-            loop = True
+        if stroke not in stroke_signed:    
+            if rep > 2:
+                stroke_signed.append(stroke)
+                loop = True
+                break
+            else:
+                loop = False
         else:
-            loop = False
+            loop = True
+            break
     return loop
+
 def limit(sequence):
     s = []
     sequence = [words.replace("-", "") for words in sequence]
@@ -43,9 +49,15 @@ def limit(sequence):
 def diagrams(sequence, limit_switches):
     s = []
     l, s, index_sequence= limit(sequence)
+    cell_text = [limit_switches]
+    columns= sequence
+    
+
     fig, axs = plt.subplots(nrows = l, ncols = 1)
     plt.get_current_fig_manager().set_window_title("Diagram's fases")
-    
+    plt.rcParams["figure.figsize"] = [15, 9]
+    plt.rcParams["figure.autolayout"] = True
+
     x = list(range(len(sequence)+1))
     y = [[] for _ in range(l)]
 
@@ -71,10 +83,24 @@ def diagrams(sequence, limit_switches):
                 y[j].append(v)
             
     for i, ax in enumerate(axs.flat):
-        ax.set_title(f'Piston ' + str(s[i]))
+        ax.set_ylabel(str(s[i]))
         ax.set_ylim([0, 1])
+        ax.set_xlim([0, len(sequence)])
+        ax.sharex(ax)
         ax.plot(x,y[i])
-
+        
+    
+    
+    diagram = fig.add_subplot()
+    diagram.table(cellText = cell_text,
+                rowLabels = ['Finecorsa'],
+                colLabels = columns,
+                loc = 'bottom',
+                bbox =[0.0, -0.25, 1, 0.1])
+    diagram.axis('off')
+    diagram.axis('off')
+    plt.subplots_adjust(left=0.08, bottom=None, right=None, top=None, wspace=None, hspace=0.972)
+    
     plt.tight_layout()
     plt.show()
     
@@ -95,6 +121,8 @@ def limit_switches(s_l_s):
 
 #check piston position, if the piston is already in the position of the new stroke, then ask again for the correct stroke   
 def check_piston_position(stroke, s, correct_stroke):
+    s = [x.upper() for x in s]
+    stroke = stroke.upper()
     correct_stroke = True
     for i in reversed(range(len(s))):
         if s[i][0] == stroke[0]:
@@ -112,9 +140,9 @@ def check_piston_position(stroke, s, correct_stroke):
 def check_sequence(sequence):
     l = limit(sequence)[0]
     if len(sequence) != (l*2):
-        loop = check_loop(sequence)
+        s = limit(sequence)[2]
+        loop = check_loop(s)
         if loop == True:
-            print("ok")
             correct_stroke = True
         else:
             print("The sequence isn't completed")
@@ -183,7 +211,8 @@ class FluidPy:
             self.normal()
     
     def analysis(self, sequence):
-        s_loop = check_loop(sequence)
+        s = limit(sequence)[2]
+        s_loop = check_loop(s)
         #s_blocks = assign_blocks(sequence)
         s_l_s = limit_switches(sequence)
         s_upper = [stroke.upper() for stroke in sequence]
@@ -203,11 +232,19 @@ class FluidPy:
                     self.analysis(sequence)
                 else:
                     stop_sequence = False
-    
-
 
         except KeyboardInterrupt:
             print("\nUser has terminated the sequence.\n")
+'''
+    def loop(self):
+        sequence = []
+        if self.args.file:
+            read_file(sequence)
+        else:
+            stop_sequence = False
+            while not stop_sequence:
+                stroke, sequence = insert_stroke(sequence)'''
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
