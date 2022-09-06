@@ -121,12 +121,13 @@ def limit_switches(s_l_s):
 
 #read sequence from file
 def read_file(sequence):
-    with open('sequence.txt') as f:
+    with open('Project Fluidsim/sequence.txt') as f:
         line = f.readlines()
     s = [x.replace("/","") for x in line]
     s = ''.join(s)
     sequence = wrap(s, 2)
     return sequence
+
 #check piston position, if the piston is already in the position of the new stroke, then ask again for the correct stroke   
 def check_piston_position(stroke, s, correct_stroke):
     s = [x.upper() for x in s]
@@ -144,7 +145,6 @@ def check_piston_position(stroke, s, correct_stroke):
                 break
     
     return correct_stroke
-
 
 #check the sequence, if it is not completed it asks to finish it.
 def check_sequence(sequence):
@@ -190,6 +190,13 @@ def check_stroke(stroke, sequence):
         
     return correct_stroke
 
+#def write sequence to the file sequence.txt
+def write_file(sequence):
+    with open('Project Fluidsim/sequence.txt', 'w') as f:
+        f.write(''.join(sequence))
+
+    sequence = read_file(sequence)
+
 #function that ask the user to insert the strokes, if the stroke is correct, add it to the sequence array
 def insert_stroke(sequence):
     stroke = input("Insert stroke: ")
@@ -208,6 +215,7 @@ def insert_stroke(sequence):
 
     sequence.append(stroke)
     return stroke, sequence
+    
 #class bcolors for colored output
 class bcolors:    
     HEADER = '\033[95m'
@@ -274,6 +282,7 @@ class FluidPy:
                 if '/' in stroke:
                     del sequence[-1]
                     stop_sequence = True
+                    write_file(sequence)
                     self.analysis(sequence)
                 else:
                     stop_sequence = False
