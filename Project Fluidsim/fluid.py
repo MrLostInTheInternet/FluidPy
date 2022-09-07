@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-from msilib import sequence
-import time
 import matplotlib
 matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
@@ -10,6 +8,7 @@ import numpy as np
 import sys
 import string
 import textwrap
+import time
 from matplotlib.widgets import Slider
 from matplotlib.backends.backend_qt5agg  import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
@@ -17,17 +16,29 @@ from PyQt5 import QtWidgets
 from textwrap import fill, wrap  
 from queue import Empty
 
-#ask to insert the correct stroke if the check returns false
-def insert_correct_stroke():
-    stroke = input("Error. Insert the correct stroke: ")
-    return stroke
-
+#class blocks to individue the blocks and create the groups
 class Blocks:
     def __init__(self, sequence):
         self.run(sequence)
     
     def run(self, sequence):
         self.find_blocks(sequence)
+
+    def create_groups(self, group):
+        l = group.count('//')
+        groups = [[] for _ in range(l+1)]
+        i = 0
+        j = 0
+        finish = False
+        while not finish:
+            if '//' not in group[i]:
+                groups[j].append(group[i])
+                i += 1
+            else:
+                j += 1
+                i += 1
+            if i == len(group):
+                finish = True
 
     def find_blocks(self, sequence):
         seen = []
@@ -45,8 +56,13 @@ class Blocks:
                 seen.clear()
             if i == len(sequence):
                 finish = True
-        
-        print(wrap(group, 2))
+        group = wrap(group, 2)
+        self.create_groups(group)
+
+#ask to insert the correct stroke if the check returns false
+def insert_correct_stroke():
+    stroke = input("Error. Insert the correct stroke: ")
+    return stroke
 
 #check if there are pistons in loop 
 def check_loop(s):
