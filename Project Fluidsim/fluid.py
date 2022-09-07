@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 
 import argparse
+from msilib import sequence
 import time
-
+import matplotlib
+matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import string
 import textwrap
+from matplotlib.widgets import Slider
+from matplotlib.backends.backend_qt5agg  import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from PyQt5 import QtWidgets
 from textwrap import fill, wrap  
 from queue import Empty
 
@@ -16,9 +22,31 @@ def insert_correct_stroke():
     stroke = input("Error. Insert the correct stroke: ")
     return stroke
 
-#def assign_blocks(sequence):
-    with sequence as s:
-        get_index = s.index(stroke)
+class Blocks:
+    def __init__(self, sequence):
+        self.run(sequence)
+    
+    def run(self, sequence):
+        self.find_blocks(sequence)
+
+    def find_blocks(self, sequence):
+        seen = []
+        group = ''
+        finish = False
+        i = 0
+        while not finish:
+            stroke = sequence[i][0]
+            if stroke not in seen:
+                seen.append(stroke)
+                group += sequence[i]
+                i += 1
+            else:
+                group += '//'
+                seen.clear()
+            if i == len(sequence):
+                finish = True
+        
+        print(wrap(group, 2))
 
 #check if there are pistons in loop 
 def check_loop(s):
@@ -60,8 +88,9 @@ def diagrams(sequence, limit_switches):
 
     fig, axs = plt.subplots(nrows = l, ncols = 1)
     plt.get_current_fig_manager().set_window_title("Diagram's fases")
-    plt.rcParams["figure.figsize"] = [15, 9]
-    plt.rcParams["figure.autolayout"] = True
+    #plt.rcParams["figure.figsize"] = [20, 20]
+    #plt.rcParams["figure.autolayout"] = True
+    colors = plt.rcParams["axes.prop_cycle"]()
 
     x = list(range(len(sequence)+1))
     y = [[] for _ in range(l)]
@@ -87,12 +116,13 @@ def diagrams(sequence, limit_switches):
             else:
                 y[j].append(v)
     for i, ax in enumerate(axs.flat):
-        ax.set_ylabel(str(s[i]), rotation = 0)
+        c = next(colors)["color"]
+        ax.set_ylabel(str(s[i]), rotation = 0, color = c)
         ax.set_ylim([0, 1.0])
         ax.set_yticks(range(0,2,1))
         ax.set_xlim([0, len(sequence)])
         ax.sharex(ax)
-        ax.plot(x,y[i], 'o-')
+        ax.plot(x,y[i], 'o-', color = c)
         
     diagram = fig.add_subplot()
     diagram.table(cellText = cell_text,
@@ -102,11 +132,13 @@ def diagrams(sequence, limit_switches):
                 bbox =[0.0, -0.25, 1, 0.12])
     diagram.axis('off')
     diagram.axis('off')
-    plt.subplots_adjust(left=0.08, bottom=None, right=None, top=None, wspace=None, hspace=0.5)
-    
-    plt.tight_layout()
+
+    #figManager = plt.get_current_fig_manager()
+    #figManager.window.showMaximized()
+    #plt.tight_layout()
+    plt.subplots_adjust(left=0.190, bottom=0.210, right=0.900, top=0.970, wspace=None, hspace=1.000)
     plt.show()
-    
+   
 #s_l_s = sequence_limit_switches
 def limit_switches(s_l_s):
     new_s = []
@@ -170,12 +202,16 @@ def check_stroke(stroke, sequence):
             correct_stroke = False
             break
         elif stroke[0] in string.ascii_lowercase or stroke[0] in string.ascii_uppercase:        #the name of the piston is the first letter to check      
-            if stroke[1] == '+' or stroke[1] == '-':                                            #the stroke can only be positive or negative
-                correct_stroke = check_piston_position(stroke, sequence, correct_stroke)
-                if correct_stroke == False:
+            if len(stroke) > 1:
+                if stroke[1] == '+' or stroke[1] == '-':                                            #the stroke can only be positive or negative
+                    correct_stroke = check_piston_position(stroke, sequence, correct_stroke)
+                    if correct_stroke == False:
+                        break
+                else:
+                    correct_stroke = False                                                                  
                     break
             else:
-                correct_stroke = False                                                                  
+                correct_stroke = False
                 break
         elif '/' in stroke[0]:                                                             
             correct_stroke = check_sequence(sequence)
@@ -194,8 +230,6 @@ def check_stroke(stroke, sequence):
 def write_file(sequence):
     with open('Project Fluidsim/sequence.txt', 'w') as f:
         f.write(''.join(sequence))
-
-    sequence = read_file(sequence)
 
 #function that ask the user to insert the strokes, if the stroke is correct, add it to the sequence array
 def insert_stroke(sequence):
@@ -264,12 +298,10 @@ class FluidPy:
 
     def analysis(self, sequence):
         s = limit(sequence)[2]
-        s_loop = check_loop(s)
-        #s_blocks = assign_blocks(sequence)
         s_l_s = limit_switches(sequence)
         s_upper = [stroke.upper() for stroke in sequence]
+        Blocks(s_upper)
         diagrams(s_upper, s_l_s)
-        #pistons_plots(sequence, l_s)
 
     def normal(self):
         self.welcome()
