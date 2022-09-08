@@ -16,49 +16,55 @@ from PyQt5 import QtWidgets
 from textwrap import fill, wrap  
 from queue import Empty
 
-#class blocks to individue the blocks and create the groups
-class Blocks:
-    def __init__(self, sequence):
-        self.run(sequence)
-    
-    def run(self, sequence):
-        self.find_blocks(sequence)
+#---------------------------------------------------------------------------
+#PLC Structured text
+'''class plc():
+    def __init__(self, sequence, limit_switches, groups):
+        self.run(sequence, limit_switches, groups)
+    def run(self, sequence, limit_switches, groups):
+        self.assignIO(sequence, limit_switches, groups)
+    def assignIO(self, sequence, limit_switches, groups):
+        print(groups)
+'''
 
-    def create_groups(self, group):
-        l = group.count('//')
-        groups = [[] for _ in range(l+1)]
-        i = 0
-        j = 0
-        finish = False
-        while not finish:
-            if '//' not in group[i]:
-                groups[j].append(group[i])
-                i += 1
-            else:
-                j += 1
-                i += 1
-            if i == len(group):
-                finish = True
+#---------------------------------------------------------------------------
+#function blocks to individue the blocks and create the groups
+def create_groups(group):
+    l = group.count('//')
+    groups = [[] for _ in range(l+1)]
+    i = 0
+    j = 0
+    finish = False
+    while not finish:
+        if '//' not in group[i]:
+            groups[j].append(group[i])
+            i += 1
+        else:
+            j += 1
+            i += 1
+        if i == len(group):
+            finish = True
+    return groups
 
-    def find_blocks(self, sequence):
-        seen = []
-        group = ''
-        finish = False
-        i = 0
-        while not finish:
-            stroke = sequence[i][0]
-            if stroke not in seen:
-                seen.append(stroke)
-                group += sequence[i]
-                i += 1
-            else:
-                group += '//'
-                seen.clear()
-            if i == len(sequence):
-                finish = True
-        group = wrap(group, 2)
-        self.create_groups(group)
-
+def find_blocks(sequence):
+    seen = []
+    group = ''
+    finish = False
+    i = 0
+    while not finish:
+        stroke = sequence[i][0]
+        if stroke not in seen:
+            seen.append(stroke)
+            group += sequence[i]
+            i += 1
+        else:
+            group += '//'
+            seen.clear()
+        if i == len(sequence):
+            finish = True
+    group = wrap(group, 2)
+    return create_groups(group)
+        
 #ask to insert the correct stroke if the check returns false
 def insert_correct_stroke():
     stroke = input("Error. Insert the correct stroke: ")
@@ -313,10 +319,12 @@ class FluidPy:
             print(fill(bcolors.HEADER + '**Enter ' + bcolors.WARNING + '"/"' + bcolors.HEADER + ' when you want to finish the sequence ...\n' + bcolors.ENDC))
 
     def analysis(self, sequence):
+        groups = []
         s = limit(sequence)[2]
         s_l_s = limit_switches(sequence)
         s_upper = [stroke.upper() for stroke in sequence]
-        Blocks(s_upper)
+        groups = find_blocks(s_upper)
+        print(groups)
         diagrams(s_upper, s_l_s)
 
     def normal(self):
