@@ -1,0 +1,16 @@
+A+ AT %Q* : BOOL;
+B+ AT %Q* : BOOL;
+C+ AT %Q* : BOOL;
+C- AT %Q* : BOOL;
+D+ AT %Q* : BOOL;
+A- AT %Q* : BOOL;
+B- AT %Q* : BOOL;
+D- AT %Q* : BOOL;
+d0 AT %I* : BOOL;
+a1 AT %I* : BOOL;
+b1 AT %I* : BOOL;
+c1 AT %I* : BOOL;
+c0 AT %I* : BOOL;
+d1 AT %I* : BOOL;
+a0 AT %I* : BOOL;
+b0 AT %I* : BOOL;

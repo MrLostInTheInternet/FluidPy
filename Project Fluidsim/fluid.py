@@ -18,37 +18,82 @@ from queue import Empty
 
 #---------------------------------------------------------------------------
 #PLC Structured text
-'''class plc():
-    def __init__(self, sequence, limit_switches, groups):
-        self.run(sequence, limit_switches, groups)
-    def run(self, sequence, limit_switches, groups):
-        self.assignIO(sequence, limit_switches, groups)
-    def assignIO(self, sequence, limit_switches, groups):
+class plc():
+    def __init__(self, sequence, limit_switches, groups, l_s):
+        self.run(sequence, limit_switches, groups, l_s)
+    def run(self, sequence, limit_switches, groups, l_s):
+        self.assignIO(sequence, limit_switches, groups, l_s)
+    def assignIO(self, sequence, limit_switches, groups, l_s):
+        l = len(sequence)
+        g = len(groups)
+        solenoids = sequence
+
+        with open('VisualSCProjects\Project Fluidsim\plc.txt','w') as f:
+            for i in range(l):
+                f.write(f'{solenoids[i]} AT %Q* : BOOL;')
+                f.write('\n')
+            for i in range(l):
+                f.write(f'{l_s[i]} AT %I* : BOOL;')
+                f.write('\n')
+        with open('VisualSCProjects\Project Fluidsim\plc.txt','r') as f:
+            print(f.readlines())
+            f.flush()
+        relay_mem = [[] for _ in range(g)]
         print(groups)
-'''
+        print(limit_switches)
+        if g == 2:
+            i = 0
+            relay_mem[i].append(limit_switches[i+1][0])           #limit switch that activates the relay memory K*
+            relay_mem[i].append(limit_switches[i][0])           #limit switch that deactivates the relay memory k*
+        
+
+
+
+        
+        print(relay_mem)
+
 
 #---------------------------------------------------------------------------
 #function blocks to individue the blocks and create the groups
-def create_groups(group):
+def create_groups(group, l_sw):
     l = group.count('//')
     groups = [[] for _ in range(l+1)]
+    limit_switches = [[] for _ in range(l+1)]
     i = 0
     j = 0
     finish = False
     while not finish:
         if '//' not in group[i]:
             groups[j].append(group[i])
+            limit_switches[j].append(l_sw[i])
             i += 1
         else:
             j += 1
             i += 1
         if i == len(group):
             finish = True
-    return groups
+    compatible = False
+    for z in range(len(groups[-1])):
+        if groups[-1][z] not in groups[0]:
+            compatible = True
+        else:
+            compatible = False
+            print('Not compatible.')
+            break
+    if compatible == True:
+        arr1 = ''.join(groups[-1])
+        arr2 = ''.join(groups[0])
+        arr = arr1 + arr2
+        arr = wrap(arr, 2)
+        groups[0] = [arr]
+        del groups[-1]
 
-def find_blocks(sequence):
+    return groups, limit_switches
+
+def find_blocks(sequence, l_s):
     seen = []
     group = ''
+    l_sw = ''
     finish = False
     i = 0
     while not finish:
@@ -56,14 +101,17 @@ def find_blocks(sequence):
         if stroke not in seen:
             seen.append(stroke)
             group += sequence[i]
+            l_sw += l_s[i]
             i += 1
         else:
             group += '//'
+            l_sw += '//'
             seen.clear()
         if i == len(sequence):
             finish = True
     group = wrap(group, 2)
-    return create_groups(group)
+    l_sw = wrap(l_sw, 2)
+    return create_groups(group, l_sw)
         
 #ask to insert the correct stroke if the check returns false
 def insert_correct_stroke():
@@ -175,7 +223,7 @@ def limit_switches(s_l_s):
 
 #read sequence from file
 def read_file(sequence):
-    with open('Project Fluidsim/sequence.txt') as f:
+    with open('VisualSCProjects\Project Fluidsim\sequence.txt') as f:
         line = f.readlines()
     s = [x.replace("/","") for x in line]
     s = ''.join(s)
@@ -250,7 +298,7 @@ def check_stroke(stroke, sequence):
 
 #def write sequence to the file sequence.txt
 def write_file(sequence):
-    with open('Project Fluidsim/sequence.txt', 'w') as f:
+    with open('VisualSCProjects\Project Fluidsim\sequence.txt', 'w') as f:
         f.write(''.join(sequence))
 
 #function that ask the user to insert the strokes, if the stroke is correct, add it to the sequence array
@@ -320,12 +368,13 @@ class FluidPy:
 
     def analysis(self, sequence):
         groups = []
+        l_sw = []
         s = limit(sequence)[2]
         s_l_s = limit_switches(sequence)
         s_upper = [stroke.upper() for stroke in sequence]
-        groups = find_blocks(s_upper)
-        print(groups)
+        groups, l_sw = find_blocks(s_upper, s_l_s)
         diagrams(s_upper, s_l_s)
+        self.structured_text(s_upper, l_sw, groups, s_l_s)
 
     def normal(self):
         self.welcome()
@@ -354,7 +403,11 @@ class FluidPy:
             self.analysis(sequence)
         else:
             print("The sequence is empty.")
-        
+
+    def structured_text(self, sequence, limit_switches, groups, l_s):
+        plc(sequence, limit_switches, groups, l_s)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
     description='FluidPy Tool',
