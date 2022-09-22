@@ -1,21 +1,37 @@
 A+ AT %Q* : BOOL;
 A- AT %Q* : BOOL;
 B+ AT %Q* : BOOL;
-C- AT %Q* : BOOL;
 C+ AT %Q* : BOOL;
+D+ AT %Q* : BOOL;
+D- AT %Q* : BOOL;
+C- AT %Q* : BOOL;
 B- AT %Q* : BOOL;
 b0 AT %I* : BOOL;
 a1 AT %I* : BOOL;
 a0 AT %I* : BOOL;
 b1 AT %I* : BOOL;
-c0 AT %I* : BOOL;
 c1 AT %I* : BOOL;
+d1 AT %I* : BOOL;
+d0 AT %I* : BOOL;
+c0 AT %I* : BOOL;
 
 //-----------------------------------------------------
 // -----VARIABLES-----
+// -----SOLENOIDS-----
 A+ := FALSE;
 A- := FALSE;
 B+ := FALSE;
-C- := FALSE;
 C+ := FALSE;
+D+ := FALSE;
+D- := FALSE;
+C- := FALSE;
 B- := FALSE;
+ -----LIMIT SWITCHES-----
+b0 := TRUE;
+a1 := FALSE;
+a0 := TRUE;
+b1 := FALSE;
+c1 := FALSE;
+d1 := FALSE;
+d0 := TRUE;
+c0 := TRUE;

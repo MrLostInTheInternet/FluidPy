@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
+from xml.etree.ElementInclude import include
 import matplotlib
 matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
+import math
 import numpy as np
 import sys
 import string
@@ -16,52 +18,6 @@ from PyQt5 import QtWidgets
 from textwrap import fill, wrap  
 from queue import Empty
 
-#---------------------------------------------------------------------------
-#PLC Structured text
-class plc():
-    def __init__(self, sequence, limit_switches, groups, l_s):
-        self.run(sequence, limit_switches, groups, l_s)
-    def run(self, sequence, limit_switches, groups, l_s):
-        self.assignIO(sequence, limit_switches, groups, l_s)
-    def assignIO(self, sequence, limit_switches, groups, l_s):
-        l = len(sequence)
-        g = len(groups)
-        solenoids = sequence
-
-        with open('VisualSCProjects\Project Fluidsim\plc.txt','r') as f:
-            print(f.readlines())
-            f.flush()
-        num_mem = round(len(groups)/2)
-        relay_mem = [[] for _ in range(num_mem)]
-        print(groups)
-        print(limit_switches)
-        z = 1
-        j = 0
-        all_blocks = False
-        while not all_blocks:
-            relay_mem[j].append(limit_switches[z][0])           #limit switch that activates the relay memory K*
-            if z < len(limit_switches) - 1:    
-                z += 1
-                if len(relay_mem[j]) == 2:
-                    j += 1
-            else:
-                if num_mem > 1:
-                    relay_mem[j].append(limit_switches[0][0])
-                all_blocks = True
-        print(relay_mem)
-
-        with open('VisualSCProjects\Project Fluidsim\plc.txt','w') as f:
-            for i in range(l):
-                f.write(f'{solenoids[i]} AT %Q* : BOOL;')
-                f.write('\n')
-            for i in range(l):
-                f.write(f'{l_s[i]} AT %I* : BOOL;')
-                f.write('\n')
-            f.write('\n//-----------------------------------------------------\n')
-            f.write('// -----VARIABLES-----\n')
-            for i in range(l):
-                f.write(f'{solenoids[i]} := FALSE;')
-                f.write('\n')
 
 
 #---------------------------------------------------------------------------
@@ -347,6 +303,105 @@ class bcolors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+
+#---------------------------------------------------------------------------
+def algorithm_limit_switches(l_s, sequence):
+    #l_s normal array 'letter+number'
+    seen = []
+    loop_stroke = []
+    l_s_bool = []
+    s = limit(sequence)[2]
+    s = [x.lower() for x in s]
+    sequence = [x.lower() for x in sequence]
+    loop = check_loop(s)
+    if loop == True:
+        for i in range(len(l_s) - 1):
+            rep = s.count(l_s[i][0])
+            if rep > 2 and l_s[i][0] not in loop_stroke:
+                loop_stroke.append(l_s[i][0])
+                a = l_s.index(l_s[i])
+            else:
+                continue
+        for i in range(1, len(sequence)):
+            if l_s[i][0] in loop_stroke and l_s[a][1] == '1':
+                if l_s[i][1] == '0':
+                    l_s_bool.append('TRUE')
+                else:
+                    l_s_bool.append('FALSE')
+            elif l_s[i][0] in loop_stroke and l_s[a][1] == '0':
+                if l_s[i][1] == '1':
+                    l_s_bool.append('TRUE')
+                else:
+                    l_s_bool.append('FALSE')
+            elif l_s[i][0] not in loop_stroke and l_s[i][0] not in seen:
+                seen.append(l_s[i][0])
+                l_s_bool.append('FALSE')
+            elif l_s[i][0] not in loop_stroke and l_s[i][0] in seen:
+                l_s_bool.append('TRUE')
+        l_s_bool.insert(0, "TRUE")
+    else:
+        for i in range(1, len(l_s)):
+            if l_s[i][0] not in seen:
+                seen.append(l_s[i][0])
+                l_s_bool.append('FALSE')
+            else:
+                l_s_bool.append('TRUE')
+        l_s_bool.insert(0, "TRUE")
+    return l_s_bool
+
+#PLC Structured text
+class plc():
+    def __init__(self, sequence, limit_switches, groups, l_s):
+        self.run(sequence, limit_switches, groups, l_s)
+    def run(self, sequence, limit_switches, groups, l_s):
+        self.assignIO(sequence, limit_switches, groups, l_s)
+    def assignIO(self, sequence, limit_switches, groups, l_s):
+        l = len(sequence)
+        g = len(groups)
+        solenoids = sequence
+        lenght__ = len(limit_switches)
+        num_mem = math.ceil((lenght__)/2)
+        relay_mem = [[] for _ in range(num_mem)]
+        #print(groups)
+        #print(limit_switches)
+        z = 1
+        j = 0
+        all_blocks = False
+        while not all_blocks:
+            relay_mem[j].append(limit_switches[z][0])           #limit switch that activates the relay memory K*
+            if z < len(limit_switches) - 1:    
+                z += 1
+                if len(relay_mem[j]) == 2:
+                    j += 1
+            else:
+                if num_mem > 1 and len(relay_mem[j]) == 2:
+                    relay_mem[j+1].append(limit_switches[0][0])
+                else:
+                    relay_mem[j].append(limit_switches[0][0])
+                all_blocks = True
+        #print(relay_mem)
+
+        with open('VisualSCProjects\Project Fluidsim\plc.txt','w') as f:
+            for i in range(l):
+                f.write(f'{solenoids[i]} AT %Q* : BOOL;')
+                f.write('\n')
+            for i in range(l):
+                f.write(f'{l_s[i]} AT %I* : BOOL;')
+                f.write('\n')
+            f.write('\n//-----------------------------------------------------\n')
+            f.write('// -----VARIABLES-----\n')
+            f.write('// -----SOLENOIDS-----\n')
+            for i in range(l):
+                f.write(f'{solenoids[i]} := FALSE;')
+                f.write('\n')
+            l_s_bool = algorithm_limit_switches(l_s, sequence)
+            f.write('// -----LIMIT SWITCHES-----\n')
+            for i in range(l):
+                f.write(f'{l_s[i]} := {l_s_bool[i]};')
+                f.write('\n')
+#---------------------------------------------------------------------
+#-----Algorithm for limit_switches-----------------------------------
+
 
 #class FluidPy to read the input arguments and elaborate all the functions
 class FluidPy:
