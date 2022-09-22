@@ -39,9 +39,12 @@ def create_groups(group, l_sw):
             i += 1
         if i == len(group):
             finish = True
-    compatible = False
+    '''compatible = False
+    group0 = []
+    for i in range(len(groups[0])):
+        group0.append(groups[0][i][0])
     for z in range(len(groups[-1])):
-        if groups[-1][z] not in groups[0]:
+        if groups[-1][z][0] not in group0:
             compatible = True
         else:
             compatible = False
@@ -52,9 +55,9 @@ def create_groups(group, l_sw):
         arr2 = ''.join(groups[0])
         arr = arr1 + arr2
         arr = wrap(arr, 2)
-        groups[0] = [arr]
+        groups[0] = arr
         del groups[-1]
-
+'''
     return groups, limit_switches
 
 def find_blocks(sequence, l_s):
@@ -367,6 +370,7 @@ class plc():
         z = 1
         j = 0
         all_blocks = False
+        relay_names = []
         while not all_blocks:
             relay_mem[j].append(limit_switches[z][0])           #limit switch that activates the relay memory K*
             if z < len(limit_switches) - 1:    
@@ -379,8 +383,10 @@ class plc():
                 else:
                     relay_mem[j].append(limit_switches[0][0])
                 all_blocks = True
-        #print(relay_mem)
-
+        #print(relay_mem)\
+        for i in range(num_mem):
+            name = 'K' + str(i)
+            relay_names.append(name)
         with open('VisualSCProjects\Project Fluidsim\plc.txt','w') as f:
             for i in range(l):
                 f.write(f'{solenoids[i]} AT %Q* : BOOL;')
@@ -399,6 +405,39 @@ class plc():
             for i in range(l):
                 f.write(f'{l_s[i]} := {l_s_bool[i]};')
                 f.write('\n')
+            f.write('\n//-----------------------------------------------------\n')
+            f.write('// -----CONDITIONS-----\n')
+            all_blocks = False
+            i = 0
+            #while not all_blocks:
+            f.write(f'IF {relay_mem[i][0]} THEN\n\t')
+            f.write(f'{relay_names[i]} := TRUE;\n')
+            f.write('END IF;\n')
+            f.write(f'IF START AND {l_s[i]} AND {relay_names[0]} ')
+            for j in range(1, num_mem):
+                f.write(f'AND NOT {relay_names[j]} ')
+            f.write('THEN\n\t')
+            f.write(f'{solenoids[i]} := TRUE;\n')
+            f.write('END IF;\n')
+            f.write(f'IF {solenoids[i]} THEN\n\t')
+            print(groups)
+            print(len(groups[i]))
+            if len(groups[i]) > 1:
+                for j in range(1, len(groups[i])):
+                    f.write(f'{l_s[j]} := TRUE;\n\t')
+                    f.write(f'IF {l_s[j]} THEN\n\t\t')
+                    f.write(f'{solenoids[j]} := TRUE;\n\t')
+                    f.write(f'IF {solenoids[j]} THEN\n\t\t')
+                f.write('END IF;\n')
+                f.write('END IF;\n')
+            f.write(f'IF {relay_mem[i][1]} THEN\n\t')
+            f.write(f'{solenoids[i]} := FALSE;\n\t')
+            f.write(f'{relay_names[i]} := FALSE;\n')
+            f.write('END IF;\n')
+            
+
+            
+            
 #---------------------------------------------------------------------
 #-----Algorithm for limit_switches-----------------------------------
 

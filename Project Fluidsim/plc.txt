@@ -1,37 +1,61 @@
 A+ AT %Q* : BOOL;
-A- AT %Q* : BOOL;
 B+ AT %Q* : BOOL;
+C- AT %Q* : BOOL;
 C+ AT %Q* : BOOL;
 D+ AT %Q* : BOOL;
 D- AT %Q* : BOOL;
-C- AT %Q* : BOOL;
 B- AT %Q* : BOOL;
-b0 AT %I* : BOOL;
-a1 AT %I* : BOOL;
+A- AT %Q* : BOOL;
 a0 AT %I* : BOOL;
+a1 AT %I* : BOOL;
 b1 AT %I* : BOOL;
+c0 AT %I* : BOOL;
 c1 AT %I* : BOOL;
 d1 AT %I* : BOOL;
 d0 AT %I* : BOOL;
-c0 AT %I* : BOOL;
+b0 AT %I* : BOOL;
 
 //-----------------------------------------------------
 // -----VARIABLES-----
 // -----SOLENOIDS-----
 A+ := FALSE;
-A- := FALSE;
 B+ := FALSE;
+C- := FALSE;
 C+ := FALSE;
 D+ := FALSE;
 D- := FALSE;
-C- := FALSE;
 B- := FALSE;
- -----LIMIT SWITCHES-----
-b0 := TRUE;
-a1 := FALSE;
+A- := FALSE;
+// -----LIMIT SWITCHES-----
 a0 := TRUE;
+a1 := FALSE;
 b1 := FALSE;
-c1 := FALSE;
+c0 := FALSE;
+c1 := TRUE;
 d1 := FALSE;
 d0 := TRUE;
-c0 := TRUE;
+b0 := TRUE;
+
+//-----------------------------------------------------
+// -----CONDITIONS-----
+IF c0 THEN
+	K0 := TRUE;
+END IF;
+IF START AND a0 AND K0 AND NOT K1 THEN
+	A+ := TRUE;
+END IF;
+IF A+ THEN
+	a1 := TRUE;
+	IF a1 THEN
+		B+ := TRUE;
+	IF B+ THEN
+		b1 := TRUE;
+	IF b1 THEN
+		C- := TRUE;
+	IF C- THEN
+		END IF;
+END IF;
+IF d1 THEN
+	A+ := FALSE;
+	K0 := FALSE;
+END IF;
