@@ -250,6 +250,7 @@ def check_piston_position(stroke, s, correct_stroke):
 
 #check the sequence, if it is not completed it asks to finish it.
 def check_sequence(sequence):
+    sequence = [x.upper() for x in sequence]
     l = limit(sequence)[0]
     if len(sequence) != (l*2):
         s = limit(sequence)[2]
@@ -283,12 +284,16 @@ def check_stroke(stroke, sequence):
             else:
                 correct_stroke = False
                 break
-        elif '/' in stroke[0]:                                                             
-            correct_stroke = check_sequence(sequence)
-            if correct_stroke == False:
+        elif '/' in stroke[0]:
+            if len(stroke) > 1:
+                correct_stroke = False
                 break
             else:
-                print("The sequence is terminated.\n")
+                correct_stroke = check_sequence(sequence)
+                if correct_stroke == False:
+                    break
+                else:
+                    print("The sequence is terminated.\n")
         else:
             print("A letter must be the name of the actuator")
             correct_stroke = False
@@ -371,6 +376,7 @@ class FluidPy:
         l_sw = []
         s = limit(sequence)[2]
         s_l_s = limit_switches(sequence)
+        s_l_s = [l.lower() for l in s_l_s]              #limit switches labels are lowercase
         s_upper = [stroke.upper() for stroke in sequence]
         groups, l_sw = find_blocks(s_upper, s_l_s)
         diagrams(s_upper, s_l_s)
