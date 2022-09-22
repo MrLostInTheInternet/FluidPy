@@ -28,6 +28,28 @@ class plc():
         g = len(groups)
         solenoids = sequence
 
+        with open('VisualSCProjects\Project Fluidsim\plc.txt','r') as f:
+            print(f.readlines())
+            f.flush()
+        num_mem = round(len(groups)/2)
+        relay_mem = [[] for _ in range(num_mem)]
+        print(groups)
+        print(limit_switches)
+        z = 1
+        j = 0
+        all_blocks = False
+        while not all_blocks:
+            relay_mem[j].append(limit_switches[z][0])           #limit switch that activates the relay memory K*
+            if z < len(limit_switches) - 1:    
+                z += 1
+                if len(relay_mem[j]) == 2:
+                    j += 1
+            else:
+                if num_mem > 1:
+                    relay_mem[j].append(limit_switches[0][0])
+                all_blocks = True
+        print(relay_mem)
+
         with open('VisualSCProjects\Project Fluidsim\plc.txt','w') as f:
             for i in range(l):
                 f.write(f'{solenoids[i]} AT %Q* : BOOL;')
@@ -35,22 +57,11 @@ class plc():
             for i in range(l):
                 f.write(f'{l_s[i]} AT %I* : BOOL;')
                 f.write('\n')
-        with open('VisualSCProjects\Project Fluidsim\plc.txt','r') as f:
-            print(f.readlines())
-            f.flush()
-        relay_mem = [[] for _ in range(g)]
-        print(groups)
-        print(limit_switches)
-        if g == 2:
-            i = 0
-            relay_mem[i].append(limit_switches[i+1][0])           #limit switch that activates the relay memory K*
-            relay_mem[i].append(limit_switches[i][0])           #limit switch that deactivates the relay memory k*
-        
-
-
-
-        
-        print(relay_mem)
+            f.write('\n//-----------------------------------------------------\n')
+            f.write('// -----VARIABLES-----\n')
+            for i in range(l):
+                f.write(f'{solenoids[i]} := FALSE;')
+                f.write('\n')
 
 
 #---------------------------------------------------------------------------

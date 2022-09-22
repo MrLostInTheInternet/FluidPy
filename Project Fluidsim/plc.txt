@@ -1,8 +1,21 @@
 A+ AT %Q* : BOOL;
 A- AT %Q* : BOOL;
 B+ AT %Q* : BOOL;
+C- AT %Q* : BOOL;
+C+ AT %Q* : BOOL;
 B- AT %Q* : BOOL;
 b0 AT %I* : BOOL;
 a1 AT %I* : BOOL;
 a0 AT %I* : BOOL;
 b1 AT %I* : BOOL;
+c0 AT %I* : BOOL;
+c1 AT %I* : BOOL;
+
+//-----------------------------------------------------
+// -----VARIABLES-----
+A+ := FALSE;
+A- := FALSE;
+B+ := FALSE;
+C- := FALSE;
+C+ := FALSE;
+B- := FALSE;
