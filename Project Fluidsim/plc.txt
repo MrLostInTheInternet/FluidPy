@@ -1,61 +1,102 @@
-A+ AT %Q* : BOOL;
-B+ AT %Q* : BOOL;
-C- AT %Q* : BOOL;
-C+ AT %Q* : BOOL;
-D+ AT %Q* : BOOL;
-D- AT %Q* : BOOL;
-B- AT %Q* : BOOL;
-A- AT %Q* : BOOL;
-a0 AT %I* : BOOL;
-a1 AT %I* : BOOL;
-b1 AT %I* : BOOL;
-c0 AT %I* : BOOL;
-c1 AT %I* : BOOL;
-d1 AT %I* : BOOL;
-d0 AT %I* : BOOL;
-b0 AT %I* : BOOL;
+#K0 AT %Q : BOOL;
+#K1 AT %Q : BOOL;
+#A+ AT %Q* : BOOL;
+#B+ AT %Q* : BOOL;
+#C+ AT %Q* : BOOL;
+#C- AT %Q* : BOOL;
+#D+ AT %Q* : BOOL;
+#D- AT %Q* : BOOL;
+#B- AT %Q* : BOOL;
+#A- AT %Q* : BOOL;
+#a0 AT %I* : BOOL;
+#a1 AT %I* : BOOL;
+#b1 AT %I* : BOOL;
+#c1 AT %I* : BOOL;
+#c0 AT %I* : BOOL;
+#d1 AT %I* : BOOL;
+#d0 AT %I* : BOOL;
+#b0 AT %I* : BOOL;
 
 //-----------------------------------------------------
 // -----VARIABLES-----
+// -----RELAY MEMORIES-----
+#K0 := FALSE;
+#K1 := FALSE;
 // -----SOLENOIDS-----
-A+ := FALSE;
-B+ := FALSE;
-C- := FALSE;
-C+ := FALSE;
-D+ := FALSE;
-D- := FALSE;
-B- := FALSE;
-A- := FALSE;
+#A+ := FALSE;
+#B+ := FALSE;
+#C+ := FALSE;
+#C- := FALSE;
+#D+ := FALSE;
+#D- := FALSE;
+#B- := FALSE;
+#A- := FALSE;
 // -----LIMIT SWITCHES-----
-a0 := TRUE;
-a1 := FALSE;
-b1 := FALSE;
-c0 := FALSE;
-c1 := TRUE;
-d1 := FALSE;
-d0 := TRUE;
-b0 := TRUE;
+#a0 := TRUE;
+#a1 := FALSE;
+#b1 := FALSE;
+#c1 := FALSE;
+#c0 := TRUE;
+#d1 := FALSE;
+#d0 := TRUE;
+#b0 := TRUE;
 
 //-----------------------------------------------------
 // -----CONDITIONS-----
-IF c0 THEN
-	K0 := TRUE;
+IF #c1 = True THEN
+	#K0 := TRUE;
 END IF;
-IF START AND a0 AND K0 AND NOT K1 THEN
-	A+ := TRUE;
+IF #d1 = True THEN
+	#K0 := FALSE;
 END IF;
-IF A+ THEN
-	a1 := TRUE;
-	IF a1 THEN
-		B+ := TRUE;
-	IF B+ THEN
-		b1 := TRUE;
-	IF b1 THEN
-		C- := TRUE;
-	IF C- THEN
-		END IF;
+IF #d1 = True THEN
+	#K1 := TRUE;
 END IF;
-IF d1 THEN
-	A+ := FALSE;
-	K0 := FALSE;
+IF #a0 = True THEN
+	#K1 := FALSE;
+END IF;
+IF #START = True AND #a0 = True AND #K0 = False AND #K1 = False THEN
+	#A+ := TRUE;
+ELSE
+	#A+ := FALSE;
+END IF;
+IF #A+ = True THEN
+	#a1 := TRUE;
+END IF;
+IF #a1 = True THEN
+	#B+ := TRUE;
+	IF #B+ = True THEN
+		#b1 := TRUE;
+	IF #b1 = True THEN
+		#C+ := TRUE;
+	IF #C+ = True THEN
+		#c1 := TRUE;
+	END IF;
+END IF;
+IF #K0 = True AND #c1 = True THEN;
+	#C- := TRUE;
+END IF;
+IF #C- = True THEN
+	#c0 := TRUE;
+END IF;
+IF #c0 = True THEN
+	#D+ := TRUE;
+	IF #D+ = True THEN
+		#d1 := TRUE;
+	END IF;
+END IF;
+IF #K1 = True AND #d1 = True THEN;
+	#D- := TRUE;
+END IF;
+IF #D- = True THEN
+	#d0 := TRUE;
+END IF;
+IF #d0 = True THEN
+	#B- := TRUE;
+	IF #B- = True THEN
+		#b0 := TRUE;
+	END IF;
+END IF;
+IF #K1 = True AND #b0 = True THEN;
+	#A- := TRUE;
 END IF;

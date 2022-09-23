@@ -379,6 +379,7 @@ class plc():
                     j += 1
             else:
                 if num_mem > 1 and len(relay_mem[j]) == 2:
+                    relay_mem[j+1].append(limit_switches[z][0])
                     relay_mem[j+1].append(limit_switches[0][0])
                 else:
                     relay_mem[j].append(limit_switches[0][0])
@@ -388,52 +389,102 @@ class plc():
             name = 'K' + str(i)
             relay_names.append(name)
         with open('VisualSCProjects\Project Fluidsim\plc.txt','w') as f:
+            for i in range(num_mem):
+                f.write(f'#{relay_names[i]} AT %Q : BOOL;\n')
             for i in range(l):
-                f.write(f'{solenoids[i]} AT %Q* : BOOL;')
-                f.write('\n')
+                f.write(f'#{solenoids[i]} AT %Q* : BOOL;\n')
             for i in range(l):
-                f.write(f'{l_s[i]} AT %I* : BOOL;')
-                f.write('\n')
+                f.write(f'#{l_s[i]} AT %I* : BOOL;\n')
             f.write('\n//-----------------------------------------------------\n')
             f.write('// -----VARIABLES-----\n')
+            f.write('// -----RELAY MEMORIES-----\n')
+            for i in range(num_mem):
+                f.write(f'#{relay_names[i]} := FALSE;\n')
             f.write('// -----SOLENOIDS-----\n')
             for i in range(l):
-                f.write(f'{solenoids[i]} := FALSE;')
-                f.write('\n')
+                f.write(f'#{solenoids[i]} := FALSE;\n')
             l_s_bool = algorithm_limit_switches(l_s, sequence)
             f.write('// -----LIMIT SWITCHES-----\n')
             for i in range(l):
-                f.write(f'{l_s[i]} := {l_s_bool[i]};')
-                f.write('\n')
+                f.write(f'#{l_s[i]} := {l_s_bool[i]};\n')
             f.write('\n//-----------------------------------------------------\n')
             f.write('// -----CONDITIONS-----\n')
             all_blocks = False
-            i = 0
-            #while not all_blocks:
-            f.write(f'IF {relay_mem[i][0]} THEN\n\t')
-            f.write(f'{relay_names[i]} := TRUE;\n')
-            f.write('END IF;\n')
-            f.write(f'IF START AND {l_s[i]} AND {relay_names[0]} ')
+            z = 0
+            for j in range(num_mem):
+                #first conditions for the first relay
+                f.write(f'IF #{relay_mem[j][0]} = True THEN\n\t')
+                f.write(f'#{relay_names[j]} := TRUE;\n')
+                f.write('END IF;\n')
+                
+                f.write(f'IF #{relay_mem[j][1]} = True THEN\n\t')
+                f.write(f'#{relay_names[j]} := FALSE;\n')
+                f.write('END IF;\n')
+            
+            #conditions for the circuit to start and activate the first solenoid
+            f.write(f'IF #START = True AND #{l_s[0]} = True AND #{relay_names[0]} = False ')
             for j in range(1, num_mem):
-                f.write(f'AND NOT {relay_names[j]} ')
+                f.write(f'AND #{relay_names[j]} = False ')
             f.write('THEN\n\t')
-            f.write(f'{solenoids[i]} := TRUE;\n')
+            f.write(f'#{solenoids[0]} := TRUE;\n')
+            f.write('ELSE\n\t')
+            f.write(f'#{solenoids[0]} := FALSE;\n')
             f.write('END IF;\n')
-            f.write(f'IF {solenoids[i]} THEN\n\t')
-            print(groups)
-            print(len(groups[i]))
-            if len(groups[i]) > 1:
-                for j in range(1, len(groups[i])):
-                    f.write(f'{l_s[j]} := TRUE;\n\t')
-                    f.write(f'IF {l_s[j]} THEN\n\t\t')
-                    f.write(f'{solenoids[j]} := TRUE;\n\t')
-                    f.write(f'IF {solenoids[j]} THEN\n\t\t')
+            #end if of the first ativation solenoid
+            i = 0
+            h = 0
+            group_count = 0
+            while not all_blocks:
+                #if first solenoid of the group is true then
+                f.write(f'IF #{solenoids[h]} = True THEN\n\t')
+                #next limit switch true
+                f.write(f'#{l_s[h+1]} := TRUE;\n')
                 f.write('END IF;\n')
+                #if limit switch true then
+                f.write(f'IF #{l_s[h+1]} = True THEN\n\t')
+                #if group lenght > 1 then do all the solenoids inside of it starting from second
+                if len(groups[i]) > 1:
+                    for j in range(1, len(groups[i])):
+                        h += 1
+                        f.write(f'#{solenoids[h]} := TRUE;\n\t')
+                        f.write(f'IF #{solenoids[h]} = True THEN\n\t\t')
+                        if (h+1) == len(l_s):    
+                            f.write(f'#{l_s[0]} := TRUE;\n\t')
+                        else:
+                            f.write(f'#{l_s[h+1]} := TRUE;\n\t')
+                            if j != len(groups[i]) - 1:
+                                f.write(f'IF #{l_s[h+1]} = True THEN\n\t\t')
+                    group_count += 1
+                    f.write('END IF;\n')
+                    #next solenoid true
+                    #next limit switch true
+                    #last limit switch change group and activate relay
+                    #count group
+                else:
+                    h += 1
+                    group_count += 1
                 f.write('END IF;\n')
-            f.write(f'IF {relay_mem[i][1]} THEN\n\t')
-            f.write(f'{solenoids[i]} := FALSE;\n\t')
-            f.write(f'{relay_names[i]} := FALSE;\n')
-            f.write('END IF;\n')
+                if (h+1) == len(l_s):
+                    f.write(f'IF #{relay_names[i]} = True AND #{l_s[0]} = True THEN;\n\t')
+                else:
+                    f.write(f'IF #{relay_names[i]} = True AND #{l_s[h+1]} = True THEN;\n\t')
+                h += 1
+                f.write(f'#{solenoids[h]} := TRUE;\n')
+                f.write('END IF;\n')
+                if group_count == len(groups):
+                    all_blocks = True
+                else:
+                    if i == num_mem - 1:
+                        continue
+                    else:
+                        i += 1
+                        continue
+                
+                #else then change group and activate relay
+                    #count group
+                #if groups are all done exit: all_blocks = True
+
+                
             
 
             
