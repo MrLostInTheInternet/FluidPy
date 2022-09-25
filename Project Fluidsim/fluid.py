@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 import argparse
+from collections import deque
+from heapq import merge
+from operator import truediv
 from xml.etree.ElementInclude import include
 import matplotlib
 matplotlib.use('Qt5Agg')
@@ -15,7 +18,7 @@ from matplotlib.widgets import Slider
 from matplotlib.backends.backend_qt5agg  import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from PyQt5 import QtWidgets
-from textwrap import fill, wrap  
+from textwrap import fill, wrap
 from queue import Empty
 
 
@@ -39,25 +42,6 @@ def create_groups(group, l_sw):
             i += 1
         if i == len(group):
             finish = True
-    '''compatible = False
-    group0 = []
-    for i in range(len(groups[0])):
-        group0.append(groups[0][i][0])
-    for z in range(len(groups[-1])):
-        if groups[-1][z][0] not in group0:
-            compatible = True
-        else:
-            compatible = False
-            print('Not compatible.')
-            break
-    if compatible == True:
-        arr1 = ''.join(groups[-1])
-        arr2 = ''.join(groups[0])
-        arr = arr1 + arr2
-        arr = wrap(arr, 2)
-        groups[0] = arr
-        del groups[-1]
-'''
     return groups, limit_switches
 
 def find_blocks(sequence, l_s):
@@ -82,19 +66,19 @@ def find_blocks(sequence, l_s):
     group = wrap(group, 2)
     l_sw = wrap(l_sw, 2)
     return create_groups(group, l_sw)
-        
+
 #ask to insert the correct stroke if the check returns false
 def insert_correct_stroke():
     stroke = input("Error. Insert the correct stroke: ")
     return stroke
 
-#check if there are pistons in loop 
+#check if there are pistons in loop
 def check_loop(s):
     stroke_signed = []
     for i in range(len(s)):
         stroke = s[i]
         rep = s.count(stroke)
-        if stroke not in stroke_signed:    
+        if stroke not in stroke_signed:
             if rep > 2:
                 stroke_signed.append(stroke)
                 loop = True
@@ -118,13 +102,13 @@ def limit(sequence):
     index_sequence = sequence
     return limit, s, index_sequence
 
-#diagram's fases 
+#diagram's fases
 def diagrams(sequence, limit_switches):
     s = []
     l, s, index_sequence= limit(sequence)
     cell_text = [limit_switches]
     columns= sequence
-    
+
 
     fig, axs = plt.subplots(nrows = l, ncols = 1)
     plt.get_current_fig_manager().set_window_title("Diagram's fases")
@@ -163,7 +147,7 @@ def diagrams(sequence, limit_switches):
         ax.set_xlim([0, len(sequence)])
         ax.sharex(ax)
         ax.plot(x,y[i], 'o-', color = c)
-        
+
     diagram = fig.add_subplot()
     diagram.table(cellText = cell_text,
                 rowLabels = ['limit switches'],
@@ -178,7 +162,7 @@ def diagrams(sequence, limit_switches):
     #plt.tight_layout()
     plt.subplots_adjust(left=0.190, bottom=0.210, right=0.900, top=0.970, wspace=None, hspace=1.000)
     plt.show()
-   
+
 #s_l_s = sequence_limit_switches
 def limit_switches(s_l_s):
     new_s = []
@@ -200,14 +184,14 @@ def read_file(sequence):
     sequence = wrap(s, 2)
     return sequence
 
-#check piston position, if the piston is already in the position of the new stroke, then ask again for the correct stroke   
+#check piston position, if the piston is already in the position of the new stroke, then ask again for the correct stroke
 def check_piston_position(stroke, s, correct_stroke):
     s = [x.upper() for x in s]
     stroke = stroke.upper()
     correct_stroke = True
     for i in reversed(range(len(s))):
         if s[i][0] == stroke[0]:
-            last_position = i 
+            last_position = i
             if s[last_position] == stroke:
                 print("The piston is already in that position.")
                 correct_stroke = False
@@ -215,7 +199,7 @@ def check_piston_position(stroke, s, correct_stroke):
             else:
                 correct_stroke = True
                 break
-    
+
     return correct_stroke
 
 #check the sequence, if it is not completed it asks to finish it.
@@ -235,21 +219,21 @@ def check_sequence(sequence):
     return correct_stroke
 
 #check the input from the user
-def check_stroke(stroke, sequence):                                                                  
+def check_stroke(stroke, sequence):
     correct_stroke = False
-    while not correct_stroke:                                                                          
-        if len(stroke) > 2:     #limit input buffer                                         
+    while not correct_stroke:
+        if len(stroke) > 2:     #limit input buffer
             print("Too many arguments. ")
             correct_stroke = False
             break
-        elif stroke[0] in string.ascii_lowercase or stroke[0] in string.ascii_uppercase:        #the name of the piston is the first letter to check      
+        elif stroke[0] in string.ascii_lowercase or stroke[0] in string.ascii_uppercase:        #the name of the piston is the first letter to check
             if len(stroke) > 1:
                 if stroke[1] == '+' or stroke[1] == '-':                                            #the stroke can only be positive or negative
                     correct_stroke = check_piston_position(stroke, sequence, correct_stroke)
                     if correct_stroke == False:
                         break
                 else:
-                    correct_stroke = False                                                                  
+                    correct_stroke = False
                     break
             else:
                 correct_stroke = False
@@ -268,7 +252,7 @@ def check_stroke(stroke, sequence):
             print("A letter must be the name of the actuator")
             correct_stroke = False
             break
-        
+
     return correct_stroke
 
 #def write sequence to the file sequence.txt
@@ -294,9 +278,9 @@ def insert_stroke(sequence):
 
     sequence.append(stroke)
     return stroke, sequence
-    
+
 #class bcolors for colored output
-class bcolors:    
+class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
     OKCYAN = '\033[96m'
@@ -352,6 +336,20 @@ def algorithm_limit_switches(l_s, sequence):
         l_s_bool.insert(0, "TRUE")
     return l_s_bool
 
+def merge_groups(groups):
+    seen = []
+    merge = False
+    for i in range(len(groups[-1])):
+        seen.append(groups[-1][i][0])
+    for j in range(len(groups[0])):
+        stroke = groups[0][j][0]
+        if stroke in seen:
+            merge = False
+            break
+        else:
+            merge = True
+    return merge
+
 #PLC Structured text
 class plc():
     def __init__(self, sequence, limit_switches, groups, l_s):
@@ -362,44 +360,64 @@ class plc():
         l = len(sequence)
         g = len(groups)
         solenoids = sequence
-        lenght__ = len(limit_switches)
-        num_mem = math.ceil((lenght__)/2)
+        len_switches = len(limit_switches)
+
+        # if last group compatible with the first group, then we can merge them together
+        #print(groups[-1])
+        merge__ = merge_groups(groups)
+        if merge__ == True:
+            g -= 1
+        else:
+            g = g
+        print(g)
+        # if merge is true then we have to proceed with a different method then before
+        #-----------------------------------------------------------------------------
+
+        # (number of memories = groups - 1)
+        num_mem = g - 1
         relay_mem = [[] for _ in range(num_mem)]
-        #print(groups)
-        #print(limit_switches)
-        z = 1
-        j = 0
-        all_blocks = False
-        relay_names = []
-        while not all_blocks:
-            relay_mem[j].append(limit_switches[z][0])           #limit switch that activates the relay memory K*
-            if z < len(limit_switches) - 1:    
-                z += 1
-                if len(relay_mem[j]) == 2:
-                    j += 1
-            else:
-                if num_mem > 1 and len(relay_mem[j]) == 2:
-                    relay_mem[j+1].append(limit_switches[z][0])
-                    relay_mem[j+1].append(limit_switches[0][0])
-                else:
-                    relay_mem[j].append(limit_switches[0][0])
-                all_blocks = True
-        #print(relay_mem)\
+        switches_index = 1
+        # the following loop is to assign the switches to the relays contacts. IT WORKS
         for i in range(num_mem):
-            name = 'K' + str(i)
-            relay_names.append(name)
+            relay_mem[i].append(limit_switches[switches_index][0])
+            if i == (num_mem - 1):
+                if merge__ == True:
+                    relay_mem[i].append(limit_switches[switches_index+1][0])
+                elif merge__ == False:
+                    relay_mem[i].append(limit_switches[0][0])
+            else:
+                relay_mem[i].append(limit_switches[switches_index+1][0])
+            switches_index += 1
+        print(relay_mem)
+        #-------------------------------------------------------------------------------
+        # for loop to assign names to the memories
+        relay__k = []
+        for i in range(num_mem):
+            relay__k.append('K'+ str(i))
+        print(relay__k)
+        #-------------------------------------------------------------------------------
+        # we need to have the limit_switches sequence list shifted by one element
+        l_s = deque(l_s)
+        l_s.rotate(-1)
+        l_s = list(l_s)
+        print(l_s)
+        #------------------------------------------------------------------------
+        #Open the file that we want to write on the plc structured text
         with open('VisualSCProjects\Project Fluidsim\plc.txt','w') as f:
+            #relays variables ----------------------------------------------------
             for i in range(num_mem):
-                f.write(f'#{relay_names[i]} AT %Q : BOOL;\n')
+                f.write(f'#{relay__k[i]} AT %Q : BOOL;\n')
+            #solenoids variables -------------------------------------------------
             for i in range(l):
                 f.write(f'#{solenoids[i]} AT %Q* : BOOL;\n')
+            #limit switches variables --------------------------------------------
             for i in range(l):
                 f.write(f'#{l_s[i]} AT %I* : BOOL;\n')
             f.write('\n//-----------------------------------------------------\n')
             f.write('// -----VARIABLES-----\n')
             f.write('// -----RELAY MEMORIES-----\n')
             for i in range(num_mem):
-                f.write(f'#{relay_names[i]} := FALSE;\n')
+                f.write(f'#{relay__k[i]} := FALSE;\n')
             f.write('// -----SOLENOIDS-----\n')
             for i in range(l):
                 f.write(f'#{solenoids[i]} := FALSE;\n')
@@ -409,86 +427,105 @@ class plc():
                 f.write(f'#{l_s[i]} := {l_s_bool[i]};\n')
             f.write('\n//-----------------------------------------------------\n')
             f.write('// -----CONDITIONS-----\n')
-            all_blocks = False
-            z = 0
             for j in range(num_mem):
                 #first conditions for the first relay
+                #activation switch
                 f.write(f'IF #{relay_mem[j][0]} = True THEN\n\t')
-                f.write(f'#{relay_names[j]} := TRUE;\n')
+                f.write(f'#{relay__k[j]} := TRUE;\n')
                 f.write('END IF;\n')
-                
+                #deactivation switch
                 f.write(f'IF #{relay_mem[j][1]} = True THEN\n\t')
-                f.write(f'#{relay_names[j]} := FALSE;\n')
+                f.write(f'#{relay__k[j]} := FALSE;\n')
                 f.write('END IF;\n')
-            
-            #conditions for the circuit to start and activate the first solenoid
-            f.write(f'IF #START = True AND #{l_s[0]} = True AND #{relay_names[0]} = False ')
+                #------------------------------------
+            #first relay-------------------------------------
+            f.write(f'IF #{relay__k[0]} = True THEN\n')
+            if merge__ == True:
+                merged_groups = []
+                merged_groups = groups[0] + groups[-1]
+                for k in range(len(groups[0]) + len(groups[-1])):
+                    f.write(f'\t#{merged_groups[k]} := FALSE;\n')
+                f.write('END IF;\n')
+            elif merge__ == False:
+                for k in range(len(groups[0])):
+                    f.write(f'\t#{groups[0][k]} := FALSE;\n')
+                f.write('END IF;\n')
+            #------------------------------------------------
+            #next relays-------------------------------------
             for j in range(1, num_mem):
-                f.write(f'AND #{relay_names[j]} = False ')
+                f.write(f'IF #{relay__k[j]} = False THEN\n')
+                for k in range(len(groups[j+1])):
+                    f.write(f'\t#{groups[j+1][k]} := FALSE;\n')
+                f.write('END IF;\n')
+            #------------------------------------------------
+            #conditions for the circuit to start and activate the first solenoid
+            #---------------FIRST GROUP-----------------------
+            #------------------START--------------------------
+            f.write(f'IF #START = True AND #{relay__k[0]} = False ')
+            for i in range(1, num_mem):
+                f.write(f'AND #{relay__k[i]} = False ')
             f.write('THEN\n\t')
-            f.write(f'#{solenoids[0]} := TRUE;\n')
-            f.write('ELSE\n\t')
-            f.write(f'#{solenoids[0]} := FALSE;\n')
-            f.write('END IF;\n')
-            #end if of the first ativation solenoid
-            i = 0
-            h = 0
-            group_count = 0
-            while not all_blocks:
-                #if first solenoid of the group is true then
-                f.write(f'IF #{solenoids[h]} = True THEN\n\t')
-                #next limit switch true
-                f.write(f'#{l_s[h+1]} := TRUE;\n')
-                f.write('END IF;\n')
-                #if limit switch true then
-                f.write(f'IF #{l_s[h+1]} = True THEN\n\t')
-                #if group lenght > 1 then do all the solenoids inside of it starting from second
-                if len(groups[i]) > 1:
-                    for j in range(1, len(groups[i])):
-                        h += 1
-                        f.write(f'#{solenoids[h]} := TRUE;\n\t')
-                        f.write(f'IF #{solenoids[h]} = True THEN\n\t\t')
-                        if (h+1) == len(l_s):    
-                            f.write(f'#{l_s[0]} := TRUE;\n\t')
-                        else:
-                            f.write(f'#{l_s[h+1]} := TRUE;\n\t')
-                            if j != len(groups[i]) - 1:
-                                f.write(f'IF #{l_s[h+1]} = True THEN\n\t\t')
-                    group_count += 1
-                    f.write('END IF;\n')
-                    #next solenoid true
-                    #next limit switch true
-                    #last limit switch change group and activate relay
-                    #count group
+            f.write(f'#{solenoids[0]} := TRUE;\n\t')
+            f.write(f'IF #{solenoids[0]} = True THEN\n\t\t')
+            #if group 0 ins't just one stroke then
+            if len(groups[0]) > 1:
+                f.write(f'#{l_s[0]} := TRUE;\n\t')
+                finish_group = 1
+                _index_ = 1
+                while finish_group < len(groups[0]):
+                    f.write(f'IF #{l_s[_index_ - 1]} = True THEN\n\t\t')
+                    f.write(f'#{solenoids[_index_]} := TRUE;\n\t')
+                    f.write(f'IF #{solenoids[_index_]} = True THEN\n\t\t')
+                    f.write(f'#{l_s[_index_]} := TRUE;\n\t')
+                    _index_ += 1
+                    finish_group += 1
+                f.write('END IF;\nEND IF;\n')
+            else:
+                _index_ = 0
+                f.write(f'#{l_s[_index_]} := TRUE;\n\t')
+                f.write('END IF;\nEND IF;\n')
+                _index_ += 1
+            for j in range(num_mem):
+                finish_group = 0
+                f.write(f'IF #{l_s[_index_ - 1]} = True AND #{relay__k[j]} = True THEN\n')
+                while finish_group < len(groups[j + 1]):
+                    f.write(f'\t#{solenoids[_index_]} := TRUE;\n')
+                    f.write(f'\tIF #{solenoids[_index_]} = True THEN\n\t')
+                    f.write(f'\t#{l_s[_index_]} := TRUE;\n')
+                    if finish_group != (len(groups[j+1]) - 1):
+                        f.write(f'\tIF #{l_s[_index_]} = True THEN\n\t')
+                    _index_ += 1
+                    finish_group += 1
+                f.write('\tEND IF;\nEND IF;\n')
+            if merge__ == True:
+                f.write(f'IF #{l_s[_index_ - 1]} = True AND #{relay__k[0]} = False ')
+                if len(groups[-1]) > 1:
+                    for i in range(1, num_mem):
+                        f.write(f'AND #{relay__k[i]} = False ')
+                    f.write('THEN\n')
+                    finish_group = 0
+                    while finish_group < len(groups[-1]):
+                        f.write(f'\t#{solenoids[_index_]} := TRUE;\n')
+                        f.write(f'\tIF #{solenoids[_index_]} = True THEN\n\t')
+                        f.write(f'\t#{l_s[_index_]} := TRUE;\n')
+                        if finish_group != (len(groups[-1]) - 1):
+                            f.write(f'\tIF #{l_s[_index_]} = True THEN\n\t')
+                        _index_ += 1
+                        finish_group += 1
+                    f.write('END IF;\nEND IF;\n')
                 else:
-                    h += 1
-                    group_count += 1
-                f.write('END IF;\n')
-                if (h+1) == len(l_s):
-                    f.write(f'IF #{relay_names[i]} = True AND #{l_s[0]} = True THEN;\n\t')
-                else:
-                    f.write(f'IF #{relay_names[i]} = True AND #{l_s[h+1]} = True THEN;\n\t')
-                h += 1
-                f.write(f'#{solenoids[h]} := TRUE;\n')
-                f.write('END IF;\n')
-                if group_count == len(groups):
-                    all_blocks = True
-                else:
-                    if i == num_mem - 1:
-                        continue
-                    else:
-                        i += 1
-                        continue
-                
-                #else then change group and activate relay
-                    #count group
-                #if groups are all done exit: all_blocks = True
+                    for i in range(1, num_mem):
+                        f.write(f'AND #{relay__k[i]} = False ')
+                    f.write('THEN\n')
+                    f.write(f'\t#{solenoids[_index_]} := TRUE;\n')
+                    f.write(f'\tIF #{solenoids[_index_]} = True THEN\n\t')
+                    f.write(f'#{l_s[_index_]} := TRUE;\n\t')
+                    f.write('END IF;\nEND IF;\n')
+            #f.write(f'#{[]} := ;')
+            #f.write(f'IF #{[]} = THEN')
 
-                
-            
 
-            
-            
+
 #---------------------------------------------------------------------
 #-----Algorithm for limit_switches-----------------------------------
 
@@ -502,7 +539,7 @@ class FluidPy:
             self.file()
         else:
             self.normal()
-            
+
     def welcome(self):
         print('      ________                 _               _______         __ ')
         print('     /  _____/ __     __   __ |_|   _____     /  __   \ __    / / ')
@@ -556,7 +593,7 @@ class FluidPy:
 
         except KeyboardInterrupt:
             print("\nUser has terminated the sequence.\n")
-    
+
     def file(self):
         self.welcome()
         sequence = []
