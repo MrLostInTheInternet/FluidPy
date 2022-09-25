@@ -440,16 +440,16 @@ class plc():
             for j in range(num_mem):
                 #first conditions for the first relay
                 #activation switch
-                f.write(f'IF #{relay_mem[j][0]} = True THEN\n\t')
+                f.write(f'\nIF #{relay_mem[j][0]} = True THEN\n\t')
                 f.write(f'#{relay__k[j]} := TRUE;\n')
                 f.write('END_IF;\n')
                 #deactivation switch
-                f.write(f'IF #{relay_mem[j][1]} = True THEN\n\t')
+                f.write(f'\nIF #{relay_mem[j][1]} = True THEN\n\t')
                 f.write(f'#{relay__k[j]} := FALSE;\n')
                 f.write('END_IF;\n')
                 #------------------------------------
             #first relay-------------------------------------
-            f.write(f'IF #{relay__k[0]} = True THEN\n')
+            f.write(f'\nIF #{relay__k[0]} = True THEN\n')
             if merge__ == True:
                 merged_groups = []
                 merged_groups = groups[0] + groups[-1]
@@ -460,6 +460,12 @@ class plc():
                 for k in range(len(groups[0])):
                     f.write(f'\t#{groups[0][k]} := FALSE;\n')
                 f.write('END_IF;\n')
+            f.write(f'\nIF #{relay__k[0]} = False THEN\n')
+            for k in range(len(groups[1])):
+                f.write(f'\t#{groups[1][k]} := FALSE;\n')
+            f.write('END_IF;\n')
+
+
             #------------------------------------------------
             #next relays-------------------------------------
             for j in range(1, num_mem):
@@ -467,6 +473,7 @@ class plc():
                 for k in range(len(groups[j+1])):
                     f.write(f'\t#{groups[j+1][k]} := FALSE;\n')
                 f.write('END_IF;\n')
+
             #------------------------------------------------
             #conditions for the circuit to start and activate the first solenoid
             # we need to have the limit_switches sequence list shifted by one element
