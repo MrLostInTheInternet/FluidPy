@@ -412,6 +412,8 @@ class plc():
         #Open the file that we want to write on the plc structured text
         with open('VisualSCProjects\Project Fluidsim\plc.txt','w') as f:
             #relays variables ----------------------------------------------------
+            f.write('PROGRAM FluidsimSequence\n')
+            f.write('VAR\n')
             for i in range(num_mem):
                 f.write(f'#{relay__k[i]} AT %Q : BOOL;\n')
             #solenoids variables -------------------------------------------------
@@ -420,6 +422,7 @@ class plc():
             #limit switches variables --------------------------------------------
             for i in range(l):
                 f.write(f'#{l_s[i]} AT %I* : BOOL;\n')
+            f.write('END_VAR\n')
             f.write('\n//-----------------------------------------------------\n')
             f.write('// -----VARIABLES-----\n')
             f.write('// -----RELAY MEMORIES-----\n')
@@ -439,11 +442,11 @@ class plc():
                 #activation switch
                 f.write(f'IF #{relay_mem[j][0]} = True THEN\n\t')
                 f.write(f'#{relay__k[j]} := TRUE;\n')
-                f.write('END IF;\n')
+                f.write('END_IF;\n')
                 #deactivation switch
                 f.write(f'IF #{relay_mem[j][1]} = True THEN\n\t')
                 f.write(f'#{relay__k[j]} := FALSE;\n')
-                f.write('END IF;\n')
+                f.write('END_IF;\n')
                 #------------------------------------
             #first relay-------------------------------------
             f.write(f'IF #{relay__k[0]} = True THEN\n')
@@ -452,18 +455,18 @@ class plc():
                 merged_groups = groups[0] + groups[-1]
                 for k in range(len(groups[0]) + len(groups[-1])):
                     f.write(f'\t#{merged_groups[k]} := FALSE;\n')
-                f.write('END IF;\n')
+                f.write('END_IF;\n')
             elif merge__ == False:
                 for k in range(len(groups[0])):
                     f.write(f'\t#{groups[0][k]} := FALSE;\n')
-                f.write('END IF;\n')
+                f.write('END_IF;\n')
             #------------------------------------------------
             #next relays-------------------------------------
             for j in range(1, num_mem):
                 f.write(f'IF #{relay__k[j]} = False THEN\n')
                 for k in range(len(groups[j+1])):
                     f.write(f'\t#{groups[j+1][k]} := FALSE;\n')
-                f.write('END IF;\n')
+                f.write('END_IF;\n')
             #------------------------------------------------
             #conditions for the circuit to start and activate the first solenoid
             # we need to have the limit_switches sequence list shifted by one element
@@ -483,33 +486,39 @@ class plc():
             #if group 0 ins't just one stroke then
             if len(groups[0]) > 1:
                 f.write(f'#{l_s[0]} := TRUE;\n\t')
+                f.write('END_IF;\n\t')
                 finish_group = 1
                 _index_ = 1
                 while finish_group < len(groups[0]):
                     f.write(f'IF #{l_s[_index_ - 1]} = True THEN\n\t\t')
                     f.write(f'#{solenoids[_index_]} := TRUE;\n\t')
+                    f.write('END_IF;\n\t')
                     f.write(f'IF #{solenoids[_index_]} = True THEN\n\t\t')
                     f.write(f'#{l_s[_index_]} := TRUE;\n\t')
+                    f.write('END_IF;\n\t')
                     _index_ += 1
                     finish_group += 1
-                f.write('END IF;\nEND IF;\n')
+                f.write('\nEND_IF;\n')
             else:
                 _index_ = 0
                 f.write(f'#{l_s[_index_]} := TRUE;\n\t')
-                f.write('END IF;\nEND IF;\n')
+                f.write('END_IF;\nEND_IF;\n')
                 _index_ += 1
             for j in range(num_mem):
                 finish_group = 0
                 f.write(f'IF #{l_s[_index_ - 1]} = True AND #{relay__k[j]} = True THEN\n')
                 while finish_group < len(groups[j + 1]):
                     f.write(f'\t#{solenoids[_index_]} := TRUE;\n')
+                    if finish_group != 0:
+                        f.write('\tEND_IF;\n')
                     f.write(f'\tIF #{solenoids[_index_]} = True THEN\n\t')
                     f.write(f'\t#{l_s[_index_]} := TRUE;\n')
+                    f.write('\tEND_IF;\n')
                     if finish_group != (len(groups[j+1]) - 1):
                         f.write(f'\tIF #{l_s[_index_]} = True THEN\n\t')
                     _index_ += 1
                     finish_group += 1
-                f.write('\tEND IF;\nEND IF;\n')
+                f.write('END_IF;\n')
             if merge__ == True:
                 f.write(f'IF #{l_s[_index_ - 1]} = True AND #{relay__k[0]} = False ')
                 if len(groups[-1]) > 1:
@@ -521,19 +530,20 @@ class plc():
                         f.write(f'\t#{solenoids[_index_]} := TRUE;\n')
                         f.write(f'\tIF #{solenoids[_index_]} = True THEN\n\t')
                         f.write(f'\t#{l_s[_index_]} := TRUE;\n')
+                        f.write('\tEND_IF;\n')
                         if finish_group != (len(groups[-1]) - 1):
                             f.write(f'\tIF #{l_s[_index_]} = True THEN\n\t')
                         _index_ += 1
                         finish_group += 1
-                    f.write('END IF;\nEND IF;\n')
+                    f.write('END_IF;\n')
                 else:
                     for i in range(1, num_mem):
                         f.write(f'AND #{relay__k[i]} = False ')
                     f.write('THEN\n')
                     f.write(f'\t#{solenoids[_index_]} := TRUE;\n')
-                    f.write(f'\tIF #{solenoids[_index_]} = True THEN\n\t')
+                    f.write(f'\tIF #{solenoids[_index_]} = True THEN\n\t\t')
                     f.write(f'#{l_s[_index_]} := TRUE;\n\t')
-                    f.write('END IF;\nEND IF;\n')
+                    f.write('END_IF;\nEND_IF;\n')
             f.close()
             #f.write(f'#{[]} := ;')
             #f.write(f'IF #{[]} = THEN')
