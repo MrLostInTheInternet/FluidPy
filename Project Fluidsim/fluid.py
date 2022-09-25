@@ -486,6 +486,13 @@ class plc():
             #if group 0 ins't just one stroke then
             if len(groups[0]) > 1:
                 f.write(f'#{l_s[0]} := TRUE;\n\t')
+                convert_on_off = l_s[0][0]
+                for on_off in range(1,len(l_s)):
+                    if convert_on_off == l_s[on_off][0]:
+                        f.write(f'\t#{l_s[on_off]} := FALSE;\n\t')
+                        break
+                    else:
+                        continue
                 f.write('END_IF;\n\t')
                 finish_group = 1
                 _index_ = 1
@@ -495,6 +502,13 @@ class plc():
                     f.write('END_IF;\n\t')
                     f.write(f'IF #{solenoids[_index_]} = True THEN\n\t\t')
                     f.write(f'#{l_s[_index_]} := TRUE;\n\t')
+                    convert_on_off = l_s[_index_][0]
+                    for on_off in range(_index_ + 1,len(l_s)):
+                        if convert_on_off == l_s[on_off][0]:
+                            f.write(f'\t#{l_s[on_off]} := FALSE;\n\t')
+                            break
+                        else:
+                            continue
                     f.write('END_IF;\n\t')
                     _index_ += 1
                     finish_group += 1
@@ -502,6 +516,13 @@ class plc():
             else:
                 _index_ = 0
                 f.write(f'#{l_s[_index_]} := TRUE;\n\t')
+                convert_on_off = l_s[_index_][0]
+                for on_off in range(1,len(l_s)):
+                    if convert_on_off == l_s[on_off][0]:
+                        f.write(f'\t#{l_s[on_off]} := FALSE;\n\t')
+                        break
+                    else:
+                        continue
                 f.write('END_IF;\nEND_IF;\n')
                 _index_ += 1
             for j in range(num_mem):
@@ -513,6 +534,19 @@ class plc():
                         f.write('\tEND_IF;\n')
                     f.write(f'\tIF #{solenoids[_index_]} = True THEN\n\t')
                     f.write(f'\t#{l_s[_index_]} := TRUE;\n')
+                    convert_on_off = l_s[_index_][0]
+                    for on_off in range(_index_ + 1,len(l_s)):
+                        if convert_on_off == l_s[on_off][0]:
+                            f.write(f'\t\t#{l_s[on_off]} := FALSE;\n')
+                            break
+                        else:
+                            continue
+                    for on_off in range(_index_):
+                        if convert_on_off == l_s[on_off][0]:
+                            f.write(f'\t\t#{l_s[on_off]} := FALSE;\n')
+                            break
+                        else:
+                            continue
                     f.write('\tEND_IF;\n')
                     if finish_group != (len(groups[j+1]) - 1):
                         f.write(f'\tIF #{l_s[_index_]} = True THEN\n\t')
@@ -530,6 +564,19 @@ class plc():
                         f.write(f'\t#{solenoids[_index_]} := TRUE;\n')
                         f.write(f'\tIF #{solenoids[_index_]} = True THEN\n\t')
                         f.write(f'\t#{l_s[_index_]} := TRUE;\n')
+                        convert_on_off = l_s[_index_][0]
+                        for on_off in range(_index_ + 1,len(l_s)):
+                            if convert_on_off == l_s[on_off][0]:
+                                f.write(f'\t\t#{l_s[on_off]} := FALSE;\n')
+                                break
+                            else:
+                                continue
+                        for on_off in range(_index_):
+                            if convert_on_off == l_s[on_off][0]:
+                                f.write(f'\t\t#{l_s[on_off]} := FALSE;\n')
+                                break
+                            else:
+                                continue
                         f.write('\tEND_IF;\n')
                         if finish_group != (len(groups[-1]) - 1):
                             f.write(f'\tIF #{l_s[_index_]} = True THEN\n\t')
@@ -543,6 +590,19 @@ class plc():
                     f.write(f'\t#{solenoids[_index_]} := TRUE;\n')
                     f.write(f'\tIF #{solenoids[_index_]} = True THEN\n\t\t')
                     f.write(f'#{l_s[_index_]} := TRUE;\n\t')
+                    convert_on_off = l_s[_index_][0]
+                    for on_off in range(_index_ + 1,len(l_s)):
+                        if convert_on_off == l_s[on_off][0]:
+                            f.write(f'\t#{l_s[on_off]} := FALSE;\n\t')
+                            break
+                        else:
+                            continue
+                    for on_off in range(_index_):
+                        if convert_on_off == l_s[on_off][0]:
+                            f.write(f'\t#{l_s[on_off]} := FALSE;\n\t')
+                            break
+                        else:
+                            continue
                     f.write('END_IF;\nEND_IF;\n')
             f.close()
             #f.write(f'#{[]} := ;')
