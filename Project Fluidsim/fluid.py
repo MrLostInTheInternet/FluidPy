@@ -69,7 +69,7 @@ def find_blocks(sequence, l_s):
 
 #ask to insert the correct stroke if the check returns false
 def insert_correct_stroke():
-    stroke = input("Error. Insert the correct stroke: ")
+    stroke = input(fill(bcolors.OKBLUE + '[x] Insert the correct stroke: ' + bcolors.ENDC))
     return stroke
 
 #check if there are pistons in loop
@@ -139,14 +139,23 @@ def diagrams(sequence, limit_switches):
                     v = 0
             else:
                 y[j].append(v)
-    for i, ax in enumerate(axs.flat):
+    if len(sequence) == 2:
         c = next(colors)["color"]
-        ax.set_ylabel(str(s[i]), rotation = 0, color = c)
-        ax.set_ylim([0, 1.0])
-        ax.set_yticks(range(0,2,1))
-        ax.set_xlim([0, len(sequence)])
-        ax.sharex(ax)
-        ax.plot(x,y[i], 'o-', color = c)
+        axs.set_ylabel(str(s[0]), rotation = 0, color = c)
+        axs.set_ylim([0, 1.0])
+        axs.set_yticks(range(0,2,1))
+        axs.set_xlim([0, len(sequence)])
+        axs.sharex(axs)
+        axs.plot(x,y[0], 'o-', color = c)
+    else:
+        for i, ax in enumerate(axs.flat):
+            c = next(colors)["color"]
+            ax.set_ylabel(str(s[i]), rotation = 0, color = c)
+            ax.set_ylim([0, 1.0])
+            ax.set_yticks(range(0,2,1))
+            ax.set_xlim([0, len(sequence)])
+            ax.sharex(ax)
+            ax.plot(x,y[i], 'o-', color = c)
 
     diagram = fig.add_subplot()
     diagram.table(cellText = cell_text,
@@ -193,7 +202,7 @@ def check_piston_position(stroke, s, correct_stroke):
         if s[i][0] == stroke[0]:
             last_position = i
             if s[last_position] == stroke:
-                print("The piston is already in that position.")
+                print(fill(bcolors.WARNING + "[!] Error. The piston is already in that position.\n" + bcolors.ENDC))
                 correct_stroke = False
                 break
             else:
@@ -212,7 +221,7 @@ def check_sequence(sequence):
         if loop == True:
             correct_stroke = True
         else:
-            print("The sequence isn't completed")
+            print(fill(bcolors.WARNING + "[!] Error. The sequence isn't completed.\n" + bcolors.ENDC))
             correct_stroke = False
     else:
         correct_stroke = True
@@ -223,7 +232,11 @@ def check_stroke(stroke, sequence):
     correct_stroke = False
     while not correct_stroke:
         if len(stroke) > 2:     #limit input buffer
-            print("Too many arguments. ")
+            print(fill(bcolors.WARNING + '[!] Error. Too many arguments.\n' + bcolors.ENDC))
+            correct_stroke = False
+            break
+        elif len(stroke) == 0:
+            print(fill(bcolors.WARNING + '[!] Error. No stroke submitted\n' + bcolors.ENDC))
             correct_stroke = False
             break
         elif stroke[0] in string.ascii_lowercase or stroke[0] in string.ascii_uppercase:        #the name of the piston is the first letter to check
@@ -247,9 +260,9 @@ def check_stroke(stroke, sequence):
                 if correct_stroke == False:
                     break
                 else:
-                    print("The sequence is terminated.\n")
+                    print(fill(bcolors.OKGREEN + '[+] The sequence is terminated\n' + bcolors.ENDC))
         else:
-            print("A letter must be the name of the actuator")
+            print(fill(bcolors.WARNING + '[!] Error. \n' + bcolors.ENDC))
             correct_stroke = False
             break
 
@@ -262,7 +275,7 @@ def write_file(sequence):
 
 #function that ask the user to insert the strokes, if the stroke is correct, add it to the sequence array
 def insert_stroke(sequence):
-    stroke = input("Insert stroke: ")
+    stroke = input(fill(bcolors.OKGREEN + '[ ] Insert stroke: ' + bcolors.ENDC))
     continue_insert = False
     while not continue_insert:
         correct_stroke = check_stroke(stroke, sequence)
@@ -270,7 +283,7 @@ def insert_stroke(sequence):
             stroke = insert_correct_stroke()
         else:
             if '/' in stroke:
-                print("We can proceed with the analysis")
+                print(fill(bcolors.OKGREEN + '[+] Proceeding with the analysis\n' + bcolors.ENDC))
                 continue_insert = False
                 break
             else:
@@ -369,7 +382,7 @@ class plc():
             g -= 1
         else:
             g = g
-        print(g)
+        #print(g)
         # if merge is true then we have to proceed with a different method then before
         #-----------------------------------------------------------------------------
 
@@ -388,20 +401,14 @@ class plc():
             else:
                 relay_mem[i].append(limit_switches[switches_index+1][0])
             switches_index += 1
-        print(relay_mem)
+        #print(relay_mem)
         #-------------------------------------------------------------------------------
         # for loop to assign names to the memories
         relay__k = []
         for i in range(num_mem):
             relay__k.append('K'+ str(i))
-        print(relay__k)
+        #print(relay__k)
         #-------------------------------------------------------------------------------
-        # we need to have the limit_switches sequence list shifted by one element
-        l_s = deque(l_s)
-        l_s.rotate(-1)
-        l_s = list(l_s)
-        print(l_s)
-        #------------------------------------------------------------------------
         #Open the file that we want to write on the plc structured text
         with open('VisualSCProjects\Project Fluidsim\plc.txt','w') as f:
             #relays variables ----------------------------------------------------
@@ -459,9 +466,15 @@ class plc():
                 f.write('END IF;\n')
             #------------------------------------------------
             #conditions for the circuit to start and activate the first solenoid
+            # we need to have the limit_switches sequence list shifted by one element
+            l_s = deque(l_s)
+            l_s.rotate(-1)
+            l_s = list(l_s)
+            #print(l_s)
+            #------------------------------------------------------------------------
             #---------------FIRST GROUP-----------------------
             #------------------START--------------------------
-            f.write(f'IF #START = True AND #{relay__k[0]} = False ')
+            f.write(f'IF #START = True AND #{l_s[-1]} = True AND #{relay__k[0]} = False ')
             for i in range(1, num_mem):
                 f.write(f'AND #{relay__k[i]} = False ')
             f.write('THEN\n\t')
@@ -521,6 +534,7 @@ class plc():
                     f.write(f'\tIF #{solenoids[_index_]} = True THEN\n\t')
                     f.write(f'#{l_s[_index_]} := TRUE;\n\t')
                     f.write('END IF;\nEND IF;\n')
+            f.close()
             #f.write(f'#{[]} := ;')
             #f.write(f'IF #{[]} = THEN')
 
@@ -572,8 +586,8 @@ class FluidPy:
         s_l_s = [l.lower() for l in s_l_s]              #limit switches labels are lowercase
         s_upper = [stroke.upper() for stroke in sequence]
         groups, l_sw = find_blocks(s_upper, s_l_s)
-        diagrams(s_upper, s_l_s)
         self.structured_text(s_upper, l_sw, groups, s_l_s)
+        diagrams(s_upper, s_l_s)
 
     def normal(self):
         self.welcome()
@@ -592,7 +606,7 @@ class FluidPy:
                     stop_sequence = False
 
         except KeyboardInterrupt:
-            print("\nUser has terminated the sequence.\n")
+            print(fill(bcolors.FAIL + "\n[!] User has terminated the script.\n" + bcolors.ENDC))
 
     def file(self):
         self.welcome()
