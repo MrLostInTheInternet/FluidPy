@@ -1,1 +1,1 @@
-a+a-b+c+c-b-e+e-
+a+a-a+a-b+b-

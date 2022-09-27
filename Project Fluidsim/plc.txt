@@ -1,48 +1,30 @@
 PROGRAM FluidsimSequence
 VAR
 #K0 AT %Q : BOOL;
-#K1 AT %Q : BOOL;
 #A+ AT %Q* : BOOL;
 #A- AT %Q* : BOOL;
 #B+ AT %Q* : BOOL;
-#C+ AT %Q* : BOOL;
-#C- AT %Q* : BOOL;
 #B- AT %Q* : BOOL;
-#E+ AT %Q* : BOOL;
-#E- AT %Q* : BOOL;
-#e0 AT %I* : BOOL;
+#b0 AT %I* : BOOL;
 #a1 AT %I* : BOOL;
 #a0 AT %I* : BOOL;
 #b1 AT %I* : BOOL;
-#c1 AT %I* : BOOL;
-#c0 AT %I* : BOOL;
-#b0 AT %I* : BOOL;
-#e1 AT %I* : BOOL;
 END_VAR
 
 //-----------------------------------------------------
 // -----VARIABLES-----
 // -----RELAY MEMORIES-----
 #K0 := FALSE;
-#K1 := FALSE;
 // -----SOLENOIDS-----
 #A+ := FALSE;
 #A- := FALSE;
 #B+ := FALSE;
-#C+ := FALSE;
-#C- := FALSE;
 #B- := FALSE;
-#E+ := FALSE;
-#E- := FALSE;
 // -----LIMIT SWITCHES-----
-#e0 := TRUE;
+#b0 := TRUE;
 #a1 := FALSE;
 #a0 := TRUE;
 #b1 := FALSE;
-#c1 := FALSE;
-#c0 := TRUE;
-#b0 := TRUE;
-#e1 := FALSE;
 
 //-----------------------------------------------------
 // -----CONDITIONS-----
@@ -51,34 +33,20 @@ IF #a1 = True THEN
 	#K0 := TRUE;
 END_IF;
 
-IF #c1 = True THEN
+IF #b1 = True THEN
 	#K0 := FALSE;
-END_IF;
-
-IF #c1 = True THEN
-	#K1 := TRUE;
-END_IF;
-
-IF #e1 = True THEN
-	#K1 := FALSE;
 END_IF;
 
 IF #K0 = True THEN
 	#A+ := FALSE;
-	#E- := FALSE;
+	#B- := FALSE;
 END_IF;
 
 IF #K0 = False THEN
 	#A- := FALSE;
 	#B+ := FALSE;
-	#C+ := FALSE;
 END_IF;
-IF #K1 = False THEN
-	#C- := FALSE;
-	#B- := FALSE;
-	#E+ := FALSE;
-END_IF;
-IF #START = True AND #e0 = True AND #K0 = False AND #K1 = False THEN
+IF #START = True AND #b0 = True AND #K0 = False THEN
 	#A+ := TRUE;
 	IF #A+ = True THEN
 		#a1 := TRUE;
@@ -89,7 +57,6 @@ IF #a1 = True AND #K0 = True THEN
 	#A- := TRUE;
 	IF #A- = True THEN
 		#a0 := TRUE;
-		#a1 := FALSE;
 	END_IF;
 	IF #a0 = True THEN
 		#B+ := TRUE;
@@ -98,39 +65,11 @@ IF #a1 = True AND #K0 = True THEN
 		#b1 := TRUE;
 		#b0 := FALSE;
 	END_IF;
-	IF #b1 = True THEN
-		#C+ := TRUE;
-	END_IF;
-	IF #C+ = True THEN
-		#c1 := TRUE;
-		#c0 := FALSE;
-	END_IF;
 END_IF;
-IF #c1 = True AND #K1 = True THEN
-	#C- := TRUE;
-	IF #C- = True THEN
-		#c0 := TRUE;
-		#c1 := FALSE;
-	END_IF;
-	IF #c0 = True THEN
-		#B- := TRUE;
-	END_IF;
+IF #b1 = True AND #K0 = False THEN
+	#B- := TRUE;
 	IF #B- = True THEN
 		#b0 := TRUE;
 		#b1 := FALSE;
-	END_IF;
-	IF #b0 = True THEN
-		#E+ := TRUE;
-	END_IF;
-	IF #E+ = True THEN
-		#e1 := TRUE;
-		#e0 := FALSE;
-	END_IF;
-END_IF;
-IF #e1 = True AND #K0 = False AND #K1 = False THEN
-	#E- := TRUE;
-	IF #E- = True THEN
-		#e0 := TRUE;
-		#e1 := FALSE;
 	END_IF;
 END_IF;

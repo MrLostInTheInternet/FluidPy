@@ -1,23 +1,17 @@
 #!/usr/bin/env python3
 
 import argparse
-from collections import deque
-from heapq import merge
-from operator import truediv
-from xml.etree.ElementInclude import include
+from tabnanny import check
 import matplotlib
-matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 import math
 import numpy as np
+import PySimpleGUI as sg
 import sys
 import string
 import textwrap
 import time
-from matplotlib.widgets import Slider
-from matplotlib.backends.backend_qt5agg  import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-from PyQt5 import QtWidgets
+from collections import deque
 from textwrap import fill, wrap
 from queue import Empty
 
@@ -139,7 +133,7 @@ def diagrams(sequence, limit_switches):
                     v = 0
             else:
                 y[j].append(v)
-    if len(sequence) == 2:
+    if len(sequence) == 2 or len(set(sequence)) == 2:
         c = next(colors)["color"]
         axs.set_ylabel(str(s[0]), rotation = 0, color = c)
         axs.set_ylim([0, 1.0])
@@ -170,7 +164,7 @@ def diagrams(sequence, limit_switches):
     #figManager.window.showMaximized()
     #plt.tight_layout()
     plt.subplots_adjust(left=0.190, bottom=0.210, right=0.900, top=0.970, wspace=None, hspace=1.000)
-    plt.show()
+    plt.savefig('VisualSCProjects/Project Fluidsim/diagram_fases.png')
 
 #s_l_s = sequence_limit_switches
 def limit_switches(s_l_s):
@@ -320,6 +314,7 @@ def algorithm_limit_switches(l_s, sequence):
             if rep > 2 and l_s[i][0] not in loop_stroke:
                 loop_stroke.append(l_s[i][0])
                 a = l_s.index(l_s[i])
+                break
             else:
                 continue
         for i in range(1, len(sequence)):
@@ -374,7 +369,19 @@ class plc():
         g = len(groups)
         solenoids = sequence
         len_switches = len(limit_switches)
-
+        s = limit(sequence)[2]
+        s = [x.lower() for x in s]
+        loop = check_loop(s)
+        if loop == True:
+            loop_index = 0
+            for i in range(len(s)):
+                loop_piston = s.count(s[i])
+                if loop_piston > 2:
+                    loop_index = i
+                else:
+                    continue
+            loop_index -= 1
+            l_s_loop = l_s[loop_index]
         # if last group compatible with the first group, then we can merge them together
         #print(groups[-1])
         merge__ = merge_groups(groups)
@@ -548,12 +555,13 @@ class plc():
                             break
                         else:
                             continue
-                    for on_off in range(_index_):
-                        if convert_on_off == l_s[on_off][0]:
-                            f.write(f'\t\t#{l_s[on_off]} := FALSE;\n')
-                            break
-                        else:
-                            continue
+                    if loop == True and l_s[on_off][0] != l_s[loop_index][0]:
+                        for on_off in range(_index_):
+                            if convert_on_off == l_s[on_off][0]:
+                                f.write(f'\t\t#{l_s[on_off]} := FALSE;\n')
+                                break
+                            else:
+                                continue
                     f.write('\tEND_IF;\n')
                     if finish_group != (len(groups[j+1]) - 1):
                         f.write(f'\tIF #{l_s[_index_]} = True THEN\n\t')
@@ -628,6 +636,8 @@ class FluidPy:
     def run(self):
         if self.args.file:
             self.file()
+        elif self.args.gui:
+            self.gui()
         else:
             self.normal()
 
@@ -665,6 +675,7 @@ class FluidPy:
         groups, l_sw = find_blocks(s_upper, s_l_s)
         self.structured_text(s_upper, l_sw, groups, s_l_s)
         diagrams(s_upper, s_l_s)
+        #self.sequence_l_s = s_l_s
 
     def normal(self):
         self.welcome()
@@ -697,6 +708,12 @@ class FluidPy:
     def structured_text(self, sequence, limit_switches, groups, l_s):
         plc(sequence, limit_switches, groups, l_s)
 
+    def gui(self, sequence, limit_switches):
+        layout = [[sg.Text('Sequence:'), sg.Text(key = 'text', expand_x = True)],
+            [sg.Text('Insert stroke: '), sg.Input(key = 'input')],
+            [sg.Button('Finish'),]
+        ]
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -706,6 +723,7 @@ if __name__ == "__main__":
     fluid.py -f=mysequence.txt #read the sequence from file.txt
     '''))
     parser.add_argument('-f', '--file', type=argparse.FileType('r'))
+    parser.add_argument('-g', '--gui', help = 'Use FluidPy in GUI mode')
     args = parser.parse_args()
     fp = FluidPy(args)
     fp.run()
