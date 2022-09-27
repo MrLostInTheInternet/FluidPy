@@ -358,6 +358,16 @@ def merge_groups(groups):
             merge = True
     return merge
 
+global __groups__, __relay__k__, __relay_mem__, __l_s_bool__, __l_s__
+
+__groups__ = []
+__relay__k__ = []
+__relay_mem__ = []
+__l_s_bool__ = []
+__l_s__ = []
+
+
+
 #PLC Structured text
 class plc():
     def __init__(self, sequence, limit_switches, groups, l_s):
@@ -416,6 +426,8 @@ class plc():
             relay__k.append('K'+ str(i))
         #print(relay__k)
         #-------------------------------------------------------------------------------
+
+
         #Open the file that we want to write on the plc structured text
         with open('VisualSCProjects\Project Fluidsim\plc.txt','w') as f:
             #relays variables ----------------------------------------------------
@@ -472,6 +484,12 @@ class plc():
                 f.write(f'\t#{groups[1][k]} := FALSE;\n')
             f.write('END_IF;\n')
 
+            global __groups__, __relay__k__, __relay_mem__, __l_s_bool__, __l_s__
+            __groups__ = groups
+            __relay__k__ = relay__k
+            __relay_mem = relay_mem
+            __l_s_bool__ = l_s_bool
+            __l_s__ = l_s
 
             #------------------------------------------------
             #next relays-------------------------------------
@@ -622,7 +640,16 @@ class plc():
             f.close()
             #f.write(f'#{[]} := ;')
             #f.write(f'IF #{[]} = THEN')
+            return __groups__, __relay__k__, __relay_mem__, __l_s_bool__, __l_s__
 
+class data_table():
+    def __init__(self):
+        global __groups__, __relay__k__, __relay_mem__, __l_s_bool__, __l_s__
+        self.groups = __groups__
+        self.relay__k = __relay__k__
+        self.relay_mem = __relay_mem__
+        self.l_s_bool = __l_s_bool__
+        self.l_s = __l_s__
 
 
 #---------------------------------------------------------------------
@@ -636,8 +663,6 @@ class FluidPy:
     def run(self):
         if self.args.file:
             self.file()
-        elif self.args.gui:
-            self.gui()
         else:
             self.normal()
 
@@ -675,7 +700,6 @@ class FluidPy:
         groups, l_sw = find_blocks(s_upper, s_l_s)
         self.structured_text(s_upper, l_sw, groups, s_l_s)
         diagrams(s_upper, s_l_s)
-        #self.sequence_l_s = s_l_s
 
     def normal(self):
         self.welcome()
@@ -707,12 +731,7 @@ class FluidPy:
 
     def structured_text(self, sequence, limit_switches, groups, l_s):
         plc(sequence, limit_switches, groups, l_s)
-
-    def gui(self, sequence, limit_switches):
-        layout = [[sg.Text('Sequence:'), sg.Text(key = 'text', expand_x = True)],
-            [sg.Text('Insert stroke: '), sg.Input(key = 'input')],
-            [sg.Button('Finish'),]
-        ]
+        data_table()
 
 
 if __name__ == "__main__":

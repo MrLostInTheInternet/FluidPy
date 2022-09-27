@@ -1,30 +1,48 @@
 PROGRAM FluidsimSequence
 VAR
 #K0 AT %Q : BOOL;
+#K1 AT %Q : BOOL;
 #A+ AT %Q* : BOOL;
 #A- AT %Q* : BOOL;
 #B+ AT %Q* : BOOL;
+#C- AT %Q* : BOOL;
+#C+ AT %Q* : BOOL;
+#D+ AT %Q* : BOOL;
+#D- AT %Q* : BOOL;
 #B- AT %Q* : BOOL;
 #b0 AT %I* : BOOL;
 #a1 AT %I* : BOOL;
 #a0 AT %I* : BOOL;
 #b1 AT %I* : BOOL;
+#c0 AT %I* : BOOL;
+#c1 AT %I* : BOOL;
+#d1 AT %I* : BOOL;
+#d0 AT %I* : BOOL;
 END_VAR
 
 //-----------------------------------------------------
 // -----VARIABLES-----
 // -----RELAY MEMORIES-----
 #K0 := FALSE;
+#K1 := FALSE;
 // -----SOLENOIDS-----
 #A+ := FALSE;
 #A- := FALSE;
 #B+ := FALSE;
+#C- := FALSE;
+#C+ := FALSE;
+#D+ := FALSE;
+#D- := FALSE;
 #B- := FALSE;
 // -----LIMIT SWITCHES-----
 #b0 := TRUE;
 #a1 := FALSE;
 #a0 := TRUE;
 #b1 := FALSE;
+#c0 := FALSE;
+#c1 := TRUE;
+#d1 := FALSE;
+#d0 := TRUE;
 
 //-----------------------------------------------------
 // -----CONDITIONS-----
@@ -33,20 +51,34 @@ IF #a1 = True THEN
 	#K0 := TRUE;
 END_IF;
 
-IF #b1 = True THEN
+IF #c0 = True THEN
 	#K0 := FALSE;
+END_IF;
+
+IF #c0 = True THEN
+	#K1 := TRUE;
+END_IF;
+
+IF #d1 = True THEN
+	#K1 := FALSE;
 END_IF;
 
 IF #K0 = True THEN
 	#A+ := FALSE;
+	#D- := FALSE;
 	#B- := FALSE;
 END_IF;
 
 IF #K0 = False THEN
 	#A- := FALSE;
 	#B+ := FALSE;
+	#C- := FALSE;
 END_IF;
-IF #START = True AND #b0 = True AND #K0 = False THEN
+IF #K1 = False THEN
+	#C+ := FALSE;
+	#D+ := FALSE;
+END_IF;
+IF #START = True AND #b0 = True AND #K0 = False AND #K1 = False THEN
 	#A+ := TRUE;
 	IF #A+ = True THEN
 		#a1 := TRUE;
@@ -65,9 +97,35 @@ IF #a1 = True AND #K0 = True THEN
 		#b1 := TRUE;
 		#b0 := FALSE;
 	END_IF;
+	IF #b1 = True THEN
+		#C- := TRUE;
+	END_IF;
+	IF #C- = True THEN
+		#c0 := TRUE;
+		#c1 := FALSE;
+	END_IF;
 END_IF;
-IF #b1 = True AND #K0 = False THEN
-	#B- := TRUE;
+IF #c0 = True AND #K1 = True THEN
+	#C+ := TRUE;
+	IF #C+ = True THEN
+		#c1 := TRUE;
+	END_IF;
+	IF #c1 = True THEN
+		#D+ := TRUE;
+	END_IF;
+	IF #D+ = True THEN
+		#d1 := TRUE;
+		#d0 := FALSE;
+	END_IF;
+END_IF;
+IF #d1 = True AND #K0 = False AND #K1 = False THEN
+	#D- := TRUE;
+	IF #D- = True THEN
+		#d0 := TRUE;
+		#d1 := FALSE;
+	END_IF;
+	IF #d0 = True THEN
+		#B- := TRUE;
 	IF #B- = True THEN
 		#b0 := TRUE;
 		#b1 := FALSE;
