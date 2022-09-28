@@ -341,6 +341,9 @@ class FluidPy:
                 stroke, sequence_list = insert_stroke(sequence_list)
                 if '/' in stroke:
                     del sequence_list[-1]
+                    if len(sequence_list) == 0:
+                        stop_sequence = False
+                        break
                     stop_sequence = True
                     write_file(sequence_list)
                     self.analysis(sequence_list)
