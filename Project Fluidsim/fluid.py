@@ -362,8 +362,6 @@ class FluidPy:
     def structured_text(self, sequence_list, limit_switch_groups, groups, limit_switches_list):
         plc(sequence_list, limit_switch_groups, groups, limit_switches_list)
         data_table()
-    def gui(self):
-        os.popen('gui.py')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
