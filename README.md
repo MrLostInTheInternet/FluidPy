@@ -29,6 +29,44 @@ pasted onto any ST software like CODESYS and others.
 
 The code will be improved and still updating.
 
+REQUIREMENTS
+
+Install python and pip on your pc:
+
+-Linux:
+
+sudo apt install python3 python3-pip
+
+-Windows:
+
+download and install python from the website https://www.python.org
+
+add it to your PATH
+
+Install PySimpleGUI, matplotlib, tk, numpy:
+
+pip install PySimpleGUI
+pip install matplotlib
+pip install tk
+pip install numpy
+
+HOW TO USE IT
+
+Git clone the files in a folder:
+
+git clone https://github.com/MrLostInTheInternet/FluidPy.git
+
+cd FluidPy
+
+cd Project Fluidsim
+
+TERMINAL MODE
+
+python fluid.py --help
+
+GUI MODE
+
+python main.py
 
 
 
