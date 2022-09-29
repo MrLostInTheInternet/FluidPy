@@ -68,59 +68,44 @@ class plc():
         dir = os.path.dirname('plc_txt') + 'plc.txt'
         with open(dir,'w') as f:
             #relays variables ----------------------------------------------------
-            f.write('PROGRAM FluidsimSequence\n')
+            f.write('PROGRAM PLC_PRG\n')
             f.write('VAR\n')
             for i in range(num_mem):
-                f.write(f'#{relay_k_name[i]} AT %Q : BOOL;\n')
+                f.write(f'\t{relay_k_name[i]} AT %Q* : BOOL;\n')
             #solenoids variables -------------------------------------------------
             for i in range(l):
-                f.write(f'#{solenoids[i]} AT %Q* : BOOL;\n')
+                f.write(f'\t{solenoids[i]} AT %Q* : BOOL;\n')
             #limit switches variables --------------------------------------------
             for i in range(l):
-                f.write(f'#{limit_switch_list[i]} AT %I* : BOOL;\n')
+                f.write(f'\t{limit_switch_list[i]} AT %I* : BOOL;\n')
             f.write('END_VAR\n')
             f.write('\n//-----------------------------------------------------\n')
             f.write('// -----VARIABLES-----\n')
-            f.write('// -----RELAY MEMORIES-----\n')
+            f.write('\nSTART : BOOL;\n')
+            f.write('// -----RELAY MEMORIES-----\n\n')
             for i in range(num_mem):
-                f.write(f'#{relay_k_name[i]} := FALSE;\n')
-            f.write('// -----SOLENOIDS-----\n')
+                f.write(f'{relay_k_name[i]} := FALSE;\n')
+            f.write('// -----SOLENOIDS-----\n\n')
             for i in range(l):
-                f.write(f'#{solenoids[i]} := FALSE;\n')
+                f.write(f'{solenoids[i]} := FALSE;\n')
             limit_switch_list_bool = algorithm_limit_switches(limit_switch_list, sequence_list)
-            f.write('// -----LIMIT SWITCHES-----\n')
+            f.write('// -----LIMIT SWITCHES-----\n\n')
             for i in range(l):
-                f.write(f'#{limit_switch_list[i]} := {limit_switch_list_bool[i]};\n')
+                f.write(f'{limit_switch_list[i]} := {limit_switch_list_bool[i]};\n')
             f.write('\n//-----------------------------------------------------\n')
-            f.write('// -----CONDITIONS-----\n')
+            '''f.write('// -----CONDITIONS-----\n')
             for j in range(num_mem):
                 #first conditions for the first relay
                 #activation switch
-                f.write(f'\nIF #{relay_memories[j][0]} = True THEN\n\t')
-                f.write(f'#{relay_k_name[j]} := TRUE;\n')
+                f.write(f'\nIF {relay_memories[j][0]} = True THEN\n\t')
+                f.write(f'{relay_k_name[j]} := TRUE;\n')
                 f.write('END_IF;\n')
                 #deactivation switch
-                f.write(f'\nIF #{relay_memories[j][1]} = True THEN\n\t')
-                f.write(f'#{relay_k_name[j]} := FALSE;\n')
+                f.write(f'\nIF {relay_memories[j][1]} = True THEN\n\t')
+                f.write(f'{relay_k_name[j]} := FALSE;\n')
                 f.write('END_IF;\n')
                 #------------------------------------
-            #first relay-------------------------------------
-            f.write(f'\nIF #{relay_k_name[0]} = True THEN\n')
-            if merge__ == True:
-                merged_groups = []
-                merged_groups = groups[0] + groups[-1]
-                for k in range(len(groups[0]) + len(groups[-1])):
-                    f.write(f'\t#{merged_groups[k]} := FALSE;\n')
-                f.write('END_IF;\n')
-            elif merge__ == False:
-                for k in range(len(groups[0])):
-                    f.write(f'\t#{groups[0][k]} := FALSE;\n')
-                f.write('END_IF;\n')
-            f.write(f'\nIF #{relay_k_name[0]} = False THEN\n')
-            for k in range(len(groups[1])):
-                f.write(f'\t#{groups[1][k]} := FALSE;\n')
-            f.write('END_IF;\n')
-
+'''
             #update data table with global variables
             global groups_global, relay_k_name_global, relay_memories_global, limit_switch_list_bool_global, limit_switch_list_global
             groups_global = groups
@@ -131,12 +116,12 @@ class plc():
 
             #------------------------------------------------
             #next relays-------------------------------------
-            for j in range(1, num_mem):
-                f.write(f'IF #{relay_k_name[j]} = False THEN\n')
+            '''for j in range(1, num_mem):
+                f.write(f'IF {relay_k_name[j]} = False THEN\n')
                 for k in range(len(groups[j+1])):
-                    f.write(f'\t#{groups[j+1][k]} := FALSE;\n')
+                    f.write(f'\t{groups[j+1][k]} := FALSE;\n')
                 f.write('END_IF;\n')
-
+'''
             #------------------------------------------------
             #conditions for the circuit to start and activate the first solenoid
             # we need to have the limit_switches sequence list shifted by one element
@@ -147,134 +132,187 @@ class plc():
             #------------------------------------------------------------------------
             #---------------FIRST GROUP-----------------------
             #------------------START--------------------------
-            f.write(f'IF #START = True AND #{limit_switch_list[-1]} = True AND #{relay_k_name[0]} = False ')
+            f.write('\nWHILE START = True DO\n')
+            f.write(f'IF START = True AND {limit_switch_list[-1]} = True AND {relay_k_name[0]} = False ')
             for i in range(1, num_mem):
-                f.write(f'AND #{relay_k_name[i]} = False ')
+                f.write(f'AND {relay_k_name[i]} = False ')
             f.write('THEN\n\t')
-            f.write(f'#{solenoids[0]} := TRUE;\n\t')
-            f.write(f'IF #{solenoids[0]} = True THEN\n\t\t')
+            f.write(f'{solenoids[0]} := TRUE;\n\t')
+            f.write(f'IF {solenoids[0]} = True THEN\n\t\t')
             #if group 0 ins't just one stroke then
             if len(groups[0]) > 1:
-                f.write(f'#{limit_switch_list[0]} := TRUE;\n\t')
                 convert_on_off = limit_switch_list[0][0]
                 for on_off in range(1,len(limit_switch_list)):
                     if convert_on_off == limit_switch_list[on_off][0]:
-                        f.write(f'\t#{limit_switch_list[on_off]} := FALSE;\n\t')
+                        f.write(f'{limit_switch_list[on_off]} := FALSE;\n\t')
                         break
                     else:
                         continue
+                f.write(f'\t{limit_switch_list[0]} := TRUE;\n\t')
                 f.write('END_IF;\n\t')
                 finish_group = 1
                 _index_ = 1
                 while finish_group < len(groups[0]):
-                    f.write(f'IF #{limit_switch_list[_index_ - 1]} = True THEN\n\t\t')
-                    f.write(f'#{solenoids[_index_]} := TRUE;\n\t')
+                    f.write(f'IF {limit_switch_list[_index_ - 1]} = True THEN\n\t\t')
+                    f.write(f'{solenoids[_index_]} := TRUE;\n\t')
                     f.write('END_IF;\n\t')
-                    f.write(f'IF #{solenoids[_index_]} = True THEN\n\t\t')
-                    f.write(f'#{limit_switch_list[_index_]} := TRUE;\n\t')
+                    f.write(f'IF {solenoids[_index_]} = True THEN\n\t\t')
                     convert_on_off = limit_switch_list[_index_][0]
                     for on_off in range(_index_ + 1,len(limit_switch_list)):
                         if convert_on_off == limit_switch_list[on_off][0]:
-                            f.write(f'\t#{limit_switch_list[on_off]} := FALSE;\n\t')
+                            f.write(f'{limit_switch_list[on_off]} := FALSE;\n\t')
                             break
                         else:
                             continue
+                    f.write(f'\t{limit_switch_list[_index_]} := TRUE;\n\t')
                     f.write('END_IF;\n\t')
                     _index_ += 1
                     finish_group += 1
                 f.write('\nEND_IF;\n')
             else:
                 _index_ = 0
-                f.write(f'#{limit_switch_list[_index_]} := TRUE;\n\t')
                 convert_on_off = limit_switch_list[_index_][0]
                 for on_off in range(1,len(limit_switch_list)):
                     if convert_on_off == limit_switch_list[on_off][0]:
-                        f.write(f'\t#{limit_switch_list[on_off]} := FALSE;\n\t')
+                        f.write(f'{limit_switch_list[on_off]} := FALSE;\n\t')
                         break
                     else:
                         continue
+                f.write(f'\t{limit_switch_list[_index_]} := TRUE;\n\t')
                 f.write('END_IF;\nEND_IF;\n')
                 _index_ += 1
+            f.write(f'\nIF {relay_memories[0][0]} = True THEN\n\t')
+            f.write(f'{relay_k_name[0]} := TRUE;\n')
+            f.write('END_IF;\n')
+
+            #first relay-------------------------------------
+            f.write(f'\nIF {relay_k_name[0]} = True THEN\n')
+            if merge__ == True:
+                merged_groups = []
+                merged_groups = groups[0] + groups[-1]
+                for k in range(len(groups[0]) + len(groups[-1])):
+                    f.write(f'\t{merged_groups[k]} := FALSE;\n')
+                f.write('END_IF;\n\n')
+            elif merge__ == False:
+                for k in range(len(groups[0])):
+                    f.write(f'\t{groups[0][k]} := FALSE;\n')
+                f.write('END_IF;\n\n')
+
+            #------------NEXT GROUPS-------------------------
             for j in range(num_mem):
                 finish_group = 0
-                f.write(f'IF #{limit_switch_list[_index_ - 1]} = True AND #{relay_k_name[j]} = True THEN\n')
+                if j > 0:
+                    #activation switch
+                    f.write(f'\nIF {relay_memories[j][0]} = True THEN\n\t')
+                    f.write(f'{relay_k_name[j]} := TRUE;\n')
+                    f.write('END_IF;\n\n')
+
+                f.write(f'IF {limit_switch_list[_index_ - 1]} = True AND {relay_k_name[j]} = True THEN\n')
                 while finish_group < len(groups[j + 1]):
-                    f.write(f'\t#{solenoids[_index_]} := TRUE;\n')
+
+                    f.write(f'\t{solenoids[_index_]} := TRUE;\n')
                     if finish_group != 0:
                         f.write('\tEND_IF;\n')
-                    f.write(f'\tIF #{solenoids[_index_]} = True THEN\n\t')
-                    f.write(f'\t#{limit_switch_list[_index_]} := TRUE;\n')
+                    f.write(f'\tIF {solenoids[_index_]} = True THEN\n\t')
                     convert_on_off = limit_switch_list[_index_][0]
                     for on_off in range(_index_ + 1,len(limit_switch_list)):
                         if convert_on_off == limit_switch_list[on_off][0]:
-                            f.write(f'\t\t#{limit_switch_list[on_off]} := FALSE;\n')
+                            f.write(f'\t{limit_switch_list[on_off]} := FALSE;\n')
                             break
                         else:
                             continue
+                    for on_off in range(_index_):
+                            if convert_on_off == limit_switch_list[on_off][0]:
+                                f.write(f'\t{limit_switch_list[on_off]} := FALSE;\n')
+                                break
+                            else:
+                                continue
+                    f.write(f'\t\t{limit_switch_list[_index_]} := TRUE;\n')
                     if loop == True and limit_switch_list[on_off][0] != limit_switch_list[loop_index][0]:
                         for on_off in range(_index_):
                             if convert_on_off == limit_switch_list[on_off][0]:
-                                f.write(f'\t\t#{limit_switch_list[on_off]} := FALSE;\n')
+                                f.write(f'\t{limit_switch_list[on_off]} := FALSE;\n')
                                 break
                             else:
                                 continue
                     f.write('\tEND_IF;\n')
                     if finish_group != (len(groups[j+1]) - 1):
-                        f.write(f'\tIF #{limit_switch_list[_index_]} = True THEN\n\t')
+                        f.write(f'\tIF {limit_switch_list[_index_]} = True THEN\n\t')
                     _index_ += 1
                     finish_group += 1
                 f.write('END_IF;\n')
+                if j == 0:
+                    f.write(f'\nIF {relay_memories[j][1]} = True THEN\n\t')
+                    f.write(f'{relay_k_name[j]} := FALSE;\n')
+                    f.write('END_IF;\n')
+
+                    f.write(f'\nIF {relay_k_name[0]} = False THEN\n')
+                    for k in range(len(groups[1])):
+                        f.write(f'\t{groups[1][k]} := FALSE;\n')
+                    f.write('END_IF;\n')
+                elif j > 0:
+                    #deactivation switch
+                    f.write(f'\nIF {relay_memories[j][1]} = True THEN\n\t')
+                    f.write(f'{relay_k_name[j]} := FALSE;\n')
+                    f.write('END_IF;\n')
+
+                    f.write(f'\nIF {relay_k_name[j]} = False THEN\n')
+                    for k in range(len(groups[1])):
+                        f.write(f'\t{groups[1][k]} := FALSE;\n')
+                    f.write('END_IF;\n\n')
+                #------------------------------------
             if merge__ == True:
-                f.write(f'IF #{limit_switch_list[_index_ - 1]} = True AND #{relay_k_name[0]} = False ')
+                f.write(f'IF {limit_switch_list[_index_ - 1]} = True AND {relay_k_name[0]} = False ')
                 if len(groups[-1]) > 1:
                     for i in range(1, num_mem):
-                        f.write(f'AND #{relay_k_name[i]} = False ')
+                        f.write(f'AND {relay_k_name[i]} = False ')
                     f.write('THEN\n')
                     finish_group = 0
                     while finish_group < len(groups[-1]):
-                        f.write(f'\t#{solenoids[_index_]} := TRUE;\n')
-                        f.write(f'\tIF #{solenoids[_index_]} = True THEN\n\t')
-                        f.write(f'\t#{limit_switch_list[_index_]} := TRUE;\n')
+                        f.write(f'\t{solenoids[_index_]} := TRUE;\n')
+                        f.write(f'\tIF {solenoids[_index_]} = True THEN\n\t')
                         convert_on_off = limit_switch_list[_index_][0]
                         for on_off in range(_index_ + 1,len(limit_switch_list)):
                             if convert_on_off == limit_switch_list[on_off][0]:
-                                f.write(f'\t\t#{limit_switch_list[on_off]} := FALSE;\n')
+                                f.write(f'\t{limit_switch_list[on_off]} := FALSE;\n')
                                 break
                             else:
                                 continue
                         for on_off in range(_index_):
                             if convert_on_off == limit_switch_list[on_off][0]:
-                                f.write(f'\t\t#{limit_switch_list[on_off]} := FALSE;\n')
+                                f.write(f'\t{limit_switch_list[on_off]} := FALSE;\n')
                                 break
                             else:
                                 continue
+                        f.write(f'\t\t{limit_switch_list[_index_]} := TRUE;\n')
                         f.write('\tEND_IF;\n')
                         if finish_group != (len(groups[-1]) - 1):
-                            f.write(f'\tIF #{limit_switch_list[_index_]} = True THEN\n\t')
+                            f.write(f'\tIF {limit_switch_list[_index_]} = True THEN\n\t')
                         _index_ += 1
                         finish_group += 1
                     f.write('END_IF;\n')
                 else:
                     for i in range(1, num_mem):
-                        f.write(f'AND #{relay_k_name[i]} = False ')
+                        f.write(f'AND {relay_k_name[i]} = False ')
                     f.write('THEN\n')
-                    f.write(f'\t#{solenoids[_index_]} := TRUE;\n')
-                    f.write(f'\tIF #{solenoids[_index_]} = True THEN\n\t\t')
-                    f.write(f'#{limit_switch_list[_index_]} := TRUE;\n\t')
+                    f.write(f'\t{solenoids[_index_]} := TRUE;\n')
+                    f.write(f'\tIF {solenoids[_index_]} = True THEN\n\t\t')
                     convert_on_off = limit_switch_list[_index_][0]
                     for on_off in range(_index_ + 1,len(limit_switch_list)):
                         if convert_on_off == limit_switch_list[on_off][0]:
-                            f.write(f'\t#{limit_switch_list[on_off]} := FALSE;\n\t')
+                            f.write(f'{limit_switch_list[on_off]} := FALSE;\n\t\t')
                             break
                         else:
                             continue
                     for on_off in range(_index_):
                         if convert_on_off == limit_switch_list[on_off][0]:
-                            f.write(f'\t#{limit_switch_list[on_off]} := FALSE;\n\t')
+                            f.write(f'{limit_switch_list[on_off]} := FALSE;\n\t\t')
                             break
                         else:
                             continue
+                    f.write(f'{limit_switch_list[_index_]} := TRUE;\n\t')
                     f.write('END_IF;\nEND_IF;\n')
+            f.write('END_WHILE\n')
             f.close()
             return groups_global, relay_k_name_global, relay_memories_global, limit_switch_list_bool_global, limit_switch_list_global
 
