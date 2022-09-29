@@ -18,6 +18,17 @@ class plc():
         l = len(sequence_list)
         g = len(groups)
         solenoids = sequence_list
+        solenoids = [stroke.replace('+','positive') for stroke in solenoids]
+        solenoids = [stroke.replace('-','negative') for stroke in solenoids]
+        plc_groups = [[] for _ in range(len(groups))]
+        for i in range(len(groups)):
+            for j in range(len(groups[i])):
+                if groups[i][j][1] == '+':
+                    plc_stroke = str(groups[i][j][0]) + 'positive'
+                elif groups[i][j][1] == '-':
+                    plc_stroke = str(groups[i][j][0]) + 'negative'
+                plc_groups[i].insert(j ,plc_stroke)
+        groups = plc_groups
         len_switches = len(limit_switch_groups)
         all_names = total_pistons(sequence_list)[2]
         all_names = [x.lower() for x in all_names]
@@ -63,7 +74,6 @@ class plc():
             relay_k_name.append('K'+ str(i))
         #-------------------------------------------------------------------------------
 
-
         #Open the file that we want to write on the plc structured text
         dir = os.path.dirname('plc_txt') + 'plc.txt'
         with open(dir,'w') as f:
@@ -78,34 +88,16 @@ class plc():
             #limit switches variables --------------------------------------------
             for i in range(l):
                 f.write(f'\t{limit_switch_list[i]} AT %I* : BOOL;\n')
-            f.write('END_VAR\n')
-            f.write('\n//-----------------------------------------------------\n')
-            f.write('// -----VARIABLES-----\n')
-            f.write('\nSTART : BOOL;\n')
-            f.write('// -----RELAY MEMORIES-----\n\n')
+            f.write('\tSTART : BOOL;\n')
+            f.write('END_VAR\n\n')
             for i in range(num_mem):
                 f.write(f'{relay_k_name[i]} := FALSE;\n')
-            f.write('// -----SOLENOIDS-----\n\n')
             for i in range(l):
                 f.write(f'{solenoids[i]} := FALSE;\n')
             limit_switch_list_bool = algorithm_limit_switches(limit_switch_list, sequence_list)
-            f.write('// -----LIMIT SWITCHES-----\n\n')
             for i in range(l):
                 f.write(f'{limit_switch_list[i]} := {limit_switch_list_bool[i]};\n')
-            f.write('\n//-----------------------------------------------------\n')
-            '''f.write('// -----CONDITIONS-----\n')
-            for j in range(num_mem):
-                #first conditions for the first relay
-                #activation switch
-                f.write(f'\nIF {relay_memories[j][0]} = True THEN\n\t')
-                f.write(f'{relay_k_name[j]} := TRUE;\n')
-                f.write('END_IF;\n')
-                #deactivation switch
-                f.write(f'\nIF {relay_memories[j][1]} = True THEN\n\t')
-                f.write(f'{relay_k_name[j]} := FALSE;\n')
-                f.write('END_IF;\n')
-                #------------------------------------
-'''
+
             #update data table with global variables
             global groups_global, relay_k_name_global, relay_memories_global, limit_switch_list_bool_global, limit_switch_list_global
             groups_global = groups
@@ -113,23 +105,13 @@ class plc():
             relay_memories_global = relay_memories
             limit_switch_list_bool_global = limit_switch_list_bool
             limit_switch_list_global = limit_switch_list
+            #------------------------------------------------
 
-            #------------------------------------------------
-            #next relays-------------------------------------
-            '''for j in range(1, num_mem):
-                f.write(f'IF {relay_k_name[j]} = False THEN\n')
-                for k in range(len(groups[j+1])):
-                    f.write(f'\t{groups[j+1][k]} := FALSE;\n')
-                f.write('END_IF;\n')
-'''
-            #------------------------------------------------
             #conditions for the circuit to start and activate the first solenoid
             # we need to have the limit_switches sequence list shifted by one element
             limit_switch_list = deque(limit_switch_list)
             limit_switch_list.rotate(-1)
             limit_switch_list = list(limit_switch_list)
-            #print(l_s)
-            #------------------------------------------------------------------------
             #---------------FIRST GROUP-----------------------
             #------------------START--------------------------
             f.write('\nWHILE START = True DO\n')
